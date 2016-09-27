@@ -5,7 +5,7 @@
 ## Usage
 
 ````
-pip install git@gitlab.com:olasearch/datextractor.git
+pip install git+ssh://git@gitlab.com/olasearch/datextractor.git#egg=datextractor
 ````
 
 In your python file
