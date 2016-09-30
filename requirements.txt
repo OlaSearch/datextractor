@@ -1,1 +1,2 @@
 egenix-mx-base==3.2.9
+jupyter==1.0.0

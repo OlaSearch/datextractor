@@ -1,1 +1,2 @@
-from main import *
+from time import *
+from communication import *
