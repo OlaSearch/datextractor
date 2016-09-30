@@ -25,9 +25,9 @@ day = "(monday|tuesday|wednesday|thursday|friday|saturday|sunday)"
 week_day = "(monday|tuesday|wednesday|thursday|friday|saturday|sunday)"
 month = "(january|february|march|april|may|june|july|august|september| \
           october|november|december)"
-dmy = "(year|day|week|month|night|minutes)"
+dmy = "(year|day|week|month|night|minute)"
 rel_day = "(today|yesterday|tomorrow|tonight)"
-exp1 = "(before|after|earlier|later|ago)"
+exp1 = "(before|after|earlier|later|ago|from now)"
 exp2 = "(this|next|last)"
 iso = "\d+[/-]\d+[/-]\d+ \d+:\d+:\d+\.\d+"
 year = "((?<=\s)\d{4}|^\d{4})"
@@ -298,7 +298,7 @@ def ground(tagged_text, base_date):
             # Calculate the offset by taking '\d+' part from the timex.
             offset = int(re.split(r'\s', timex)[0])
             timex_val = str(base_date + RelativeDateTime(days=-offset))
-        elif re.match(r'\d+ days? (later|after)', timex, re.IGNORECASE):
+        elif re.match(r'\d+ days? (later|after|from now)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
             timex_val = str(base_date + RelativeDateTime(days=+offset))
         elif re.match(r'\d+ weeks? (ago|earlier|before)', timex, re.IGNORECASE):
