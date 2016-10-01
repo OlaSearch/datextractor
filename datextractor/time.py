@@ -30,7 +30,7 @@ rel_day = "(today|yesterday|tomorrow|tonight)"
 exp1 = "(before|after|earlier|later|ago|from now)"
 exp2 = "(this|next|last)"
 iso = "\d+[/-]\d+[/-]\d+ \d+:\d+:\d+\.\d+"
-year = "((?<=\s)\d{4}|^\d{4})"
+year = "((?<=\s)19|20\d{2}|^\d{4})"
 regxp1 = "((\d+|(" + numbers + "[-\s]?)+) " + dmy + "s? " + exp1 + ")"
 regxp2 = "(" + exp2 + " (" + dmy + "|" + week_day + "|" + month + "))"
 
@@ -72,7 +72,6 @@ def tag(text):
     found = reg5.findall(text)
     for timex in found:
         timex_found.append(timex)
-
     # Tag only temporal expressions which haven't been tagged.
     for timex in timex_found:
         text = re.sub(timex + '(?!</TIMEX2>)', '<TIMEX2>' + timex + '</TIMEX2>', text)
@@ -289,12 +288,15 @@ def ground(tagged_text, base_date):
             timex_val = str(base_date.year)
         elif re.match(r'next year', timex, re.IGNORECASE):
             timex_val = str(base_date.year + 1)
-        # Minutes ago
+        # Minutes past/future
         elif re.match(r'\d+ minutes? (ago|earlier|before)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
             timex_val = str(base_date + RelativeDateTime(minute=-offset))
+        elif re.match(r'\d+ minutes? (later|after|from now)', timex, re.IGNORECASE):
+            offset = int(re.split(r'\s', timex)[0])
+            timex_val = str(base_date + RelativeDateTime(minute=+offset))
+        # Days past/future
         elif re.match(r'\d+ days? (ago|earlier|before)', timex, re.IGNORECASE):
-
             # Calculate the offset by taking '\d+' part from the timex.
             offset = int(re.split(r'\s', timex)[0])
             timex_val = str(base_date + RelativeDateTime(days=-offset))
