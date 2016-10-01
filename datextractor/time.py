@@ -289,10 +289,16 @@ def ground(tagged_text, base_date):
         elif re.match(r'next year', timex, re.IGNORECASE):
             timex_val = str(base_date.year + 1)
         # Minutes past/future
-        elif re.match(r'\d+ (minutes|mins)? (ago|earlier|before)', timex, re.IGNORECASE):
+        elif re.match(r'\d+ minutes? (ago|earlier|before)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
             timex_val = str(base_date + RelativeDateTime(minute=-offset))
-        elif re.match(r'\d+ (minutes|mins)? (later|after|from now)', timex, re.IGNORECASE):
+        elif re.match(r'\d+ minutes? (later|after|from now)', timex, re.IGNORECASE):
+            offset = int(re.split(r'\s', timex)[0])
+            timex_val = str(base_date + RelativeDateTime(minute=+offset))
+        elif re.match(r'\d+ mins? (ago|earlier|before)', timex, re.IGNORECASE):
+            offset = int(re.split(r'\s', timex)[0])
+            timex_val = str(base_date + RelativeDateTime(minute=-offset))
+        elif re.match(r'\d+ mins? (later|after|from now)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
             timex_val = str(base_date + RelativeDateTime(minute=+offset))
         # Days past/future
