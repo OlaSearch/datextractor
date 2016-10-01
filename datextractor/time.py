@@ -25,7 +25,7 @@ day = "(monday|tuesday|wednesday|thursday|friday|saturday|sunday)"
 week_day = "(monday|tuesday|wednesday|thursday|friday|saturday|sunday)"
 month = "(january|february|march|april|may|june|july|august|september| \
           october|november|december)"
-dmy = "(year|day|week|month|night|minute)"
+dmy = "(year|day|week|month|night|minute|min)"
 rel_day = "(today|yesterday|tomorrow|tonight)"
 exp1 = "(before|after|earlier|later|ago|from now)"
 exp2 = "(this|next|last)"
@@ -289,10 +289,10 @@ def ground(tagged_text, base_date):
         elif re.match(r'next year', timex, re.IGNORECASE):
             timex_val = str(base_date.year + 1)
         # Minutes past/future
-        elif re.match(r'\d+ minutes? (ago|earlier|before)', timex, re.IGNORECASE):
+        elif re.match(r'\d+ (minutes|mins)? (ago|earlier|before)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
             timex_val = str(base_date + RelativeDateTime(minute=-offset))
-        elif re.match(r'\d+ minutes? (later|after|from now)', timex, re.IGNORECASE):
+        elif re.match(r'\d+ (minutes|mins)? (later|after|from now)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
             timex_val = str(base_date + RelativeDateTime(minute=+offset))
         # Days past/future
