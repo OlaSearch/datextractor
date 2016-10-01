@@ -291,16 +291,16 @@ def ground(tagged_text, base_date):
         # Minutes past/future
         elif re.match(r'\d+ minutes? (ago|earlier|before)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = str(base_date + RelativeDateTime(minute=-offset))
+            timex_val = str(base_date + RelativeDateTime(minutes=-offset))
         elif re.match(r'\d+ minutes? (later|after|from now)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = str(base_date + RelativeDateTime(minute=+offset))
+            timex_val = str(base_date + RelativeDateTime(minutes=+offset))
         elif re.match(r'\d+ mins? (ago|earlier|before)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = str(base_date + RelativeDateTime(minute=-offset))
+            timex_val = str(base_date + RelativeDateTime(minutes=-offset))
         elif re.match(r'\d+ mins? (later|after|from now)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = str(base_date + RelativeDateTime(minute=+offset))
+            timex_val = str(base_date + RelativeDateTime(minutes=+offset))
         # Days past/future
         elif re.match(r'\d+ days? (ago|earlier|before)', timex, re.IGNORECASE):
             # Calculate the offset by taking '\d+' part from the timex.
