@@ -1,5 +1,5 @@
 import re
-from mx.DateTime import *
+from datetime import timedelta, date, datetime
 
 """
 The first step is the tag the text with <TIMEX>
@@ -56,7 +56,7 @@ reg_pattern_4 = re.compile(regxp4, re.IGNORECASE)
 reg_pattern_5 = re.compile(regxp5, re.IGNORECASE)
 reg_pattern_6 = re.compile(regxp6, re.IGNORECASE)
 
-def datetime_parsing(text):
+def datetime_parsing(text, base_date = datetime.now()):
     # Initialization
     timex_found = []
     found_array = []
@@ -119,7 +119,7 @@ def datetime_parsing(text):
 
     for m in re.finditer('<TIMEX>(.*?)</TIMEX>', text):
         found_array.append((m.group(1), m.span()))
-    found_array = ground(found_array, now())
+    found_array = ground(found_array, base_date)
     return found_array
 
 # Hash function for week days to simplify the grounding task.
@@ -228,6 +228,20 @@ def hashnum(number):
     if re.match(r'thousand', number, re.IGNORECASE):
       return 1000
 
+def next_weekday_by_day(weekday):
+    day = date.today() + timedelta(days=1)
+    while day.weekday() != weekday:
+        day = day + timedelta(days=1)
+
+    return day
+
+def prev_weekday_by_day(weekday):
+    day = date.today() - timedelta(days=1)
+    while day.weekday() != weekday:
+        day = day - timedelta(days=1)
+
+    return day
+
 # Given a timex_tagged_text and a Date object set to base_date,
 # returns timex_grounded_text
 def ground(found_array, base_date):
@@ -268,7 +282,7 @@ def ground(found_array, base_date):
         # Matches Sun, 12 Jan 2010
         elif re.match(r''+ week_day + '[,\s]\s*\d{1,2}' + '\s+' + month + '\s+' + year_exp, timex, re.IGNORECASE):
             matches = re.findall('(.*)[,\s+](\d{1,2})\s(.*)\s(\d{4})', timex)[0]
-            timex_val = Date(int(matches[3]),hashmonths[matches[2].lower()], int(matches[1]))
+            timex_val = datetime(int(matches[3]),hashmonths[matches[2].lower()], int(matches[1]))
 
         # Matches July 2nd
         elif re.match(month + '\s+\d{1,2}(st|nd|rd|th)', timex, re.IGNORECASE):
@@ -280,115 +294,110 @@ def ground(found_array, base_date):
                     d = int(re.findall('\d{1,2}', m)[0])
                     all_dates.append(d)
             for d in all_dates:
-                all_values.append(Date(base_date.year, hashmonths[matches[0].lower()], d))
+                all_values.append(datetime(base_date.year, hashmonths[matches[0].lower()], d))
             timex_val = all_values
 
         # Relative dates
         elif re.match(r'tonight|tonite|today', timex, re.IGNORECASE):
             timex_val = base_date
         elif re.match(r'yesterday', timex, re.IGNORECASE):
-            timex_val = base_date + RelativeDateTime(days=-1)
+            timex_val = base_date - timedelta(days=1)
         elif re.match(r'tomorrow', timex, re.IGNORECASE):
-            timex_val = base_date + RelativeDateTime(days=+1)
+            timex_val = base_date + timedelta(days=1)
         elif re.match(r'day after tomorrow', timex, re.IGNORECASE):
-            timex_val = base_date + RelativeDateTime(days=+2)
+            timex_val = base_date + timedelta(days=2)
         elif re.match(r'day before tomorrow', timex, re.IGNORECASE):
-            timex_val = base_date + RelativeDateTime(days=-2)
+            timex_val = base_date - timedelta(days=2)
 
         # Last night
         elif re.match(r'last night', timex, re.IGNORECASE):
-            timex_val = base_date + RelativeDateTime(days=-1)
+            timex_val = base_date - timedelta(days=1)
         # Weekday in the previous week.
         elif re.match(r'last ' + week_day, timex, re.IGNORECASE):
             day = hashweekdays[timex.split()[1].lower()]
-            timex_val = base_date + RelativeDateTime(weeks=-1, weekday=(day,0))
+            timex_val = prev_weekday_by_day(day)
 
         # Weekday in the current week.
         elif re.match(r'this ' + week_day, timex, re.IGNORECASE):
             day = hashweekdays[timex.split()[1].lower()]
-            timex_val = base_date + RelativeDateTime(weeks=0, weekday=(day,0))
+            timex_val = next_weekday_by_day(day)
 
         # Weekday in the following week.
-        elif re.match(r'next ' + week_day, timex, re.IGNORECASE):
+        elif re.match(r'next ' + week_day + '\b', timex, re.IGNORECASE):
             day = hashweekdays[timex.split()[1].lower()]
-            timex_val = base_date + RelativeDateTime(weeks=+1, weekday=(day,0))
+            timex_val = next_weekday_by_day(day)
 
         # Last, this, next week.
         elif re.match(r'last week', timex, re.IGNORECASE):
-            timex_val = base_date + RelativeDateTime(weeks=-1)
+            timex_val = base_date - timedelta(weeks=1)
         elif re.match(r'this week', timex, re.IGNORECASE):
-            week = base_date + RelativeDateTime(weeks=0)
-            timex_val = week
+            timex_val = base_date - timedelta(days=base_date.weekday())
         elif re.match(r'next week', timex, re.IGNORECASE):
-            week = (base_date + RelativeDateTime(weeks=+1))
-            timex_val = week
+            timex_val = base_date + timedelta(weeks=1)
 
         # Month in the previous year.
         elif re.match(r'last ' + month, timex, re.IGNORECASE):
             month = hashmonths[timex.split()[1].lower()]
-            timex_val = Date(base_date.year - 1, month)
+            timex_val = datetime(base_date.year - 1, month)
 
         # Month in the current year.
         elif re.match(r'this ' + month, timex, re.IGNORECASE):
             month = hashmonths[timex.split()[1].lower()]
-            timex_val = Date(base_date.year, month)
+            timex_val = datetime(base_date.year, month)
 
         # Month in the following year.
         elif re.match(r'next ' + month, timex, re.IGNORECASE):
             month = hashmonths[timex.split()[1]]
-            timex_val = Date(base_date.year + 1, month)
+            timex_val = datetime(base_date.year + 1, month)
         elif re.match(r'last month', timex, re.IGNORECASE):
 
             # Handles the year boundary.
             if base_date.month == 1:
-                timex_val = Date(base_date.year - 1, 12)
+                timex_val = datetime(base_date.year - 1, 12)
             else:
-                timex_val = Date(base_date.year, base_date.month - 1)
+                timex_val = datetime(base_date.year, base_date.month - 1)
         elif re.match(r'this month', timex, re.IGNORECASE):
-                timex_val = Date(base_date.year, base_date.month)
+                timex_val = datetime(base_date.year, base_date.month)
         elif re.match(r'next month', timex, re.IGNORECASE):
-
             # Handles the year boundary.
             if base_date.month == 12:
-                timex_val = Date(base_date.year + 1, 1)
+                timex_val = datetime(base_date.year + 1, 1, 1)
             else:
-                timex_val = Date(base_date.year, base_date.month + 1)
+                timex_val = datetime(base_date.year, base_date.month + 1, 1)
         elif re.match(r'last year', timex, re.IGNORECASE):
-            timex_val = Date(base_date.year - 1)
+            timex_val = datetime(base_date.year - 1)
         elif re.match(r'this year', timex, re.IGNORECASE):
-            timex_val = Date(base_date.year)
+            timex_val = datetime(base_date.year)
         elif re.match(r'next year', timex, re.IGNORECASE):
-            timex_val = Date(base_date.year + 1)
+            timex_val = datetime(base_date.year + 1)
         # Minutes past/future
         elif re.match(r'\d+ minutes? (ago|earlier|before)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date + RelativeDateTime(minutes=-offset)
+            timex_val = base_date - timedelta(minutes=offset)
         elif re.match(r'\d+ minutes? (later|after|from now)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date + RelativeDateTime(minutes=+offset)
+            d = datetime.now() + timedelta(minutes=offset)
+            timex_val = base_date + timedelta(minutes=offset)
         elif re.match(r'\d+ mins? (ago|earlier|before)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date + RelativeDateTime(minutes=-offset)
+            timex_val = base_date - timedelta(minutes=offset)
         elif re.match(r'\d+ mins? (later|after|from now)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date + RelativeDateTime(minutes=+offset)
+            timex_val = base_date - timedelta(minutes=offset)
         # Days past/future
         elif re.match(r'\d+ days? (ago|earlier|before)', timex, re.IGNORECASE):
             # Calculate the offset by taking '\d+' part from the timex.
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date + RelativeDateTime(days=-offset)
+            timex_val = base_date - timedelta(days=offset)
         elif re.match(r'\d+ days? (later|after|from now)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date + RelativeDateTime(days=+offset)
+            timex_val = base_date + timedelta(days=offset)
         elif re.match(r'\d+ weeks? (ago|earlier|before)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            week = (base_date + RelativeDateTime(weeks=-offset))
-            timex_val = week
+            timex_val = base_date - timedelta(weeks=offset)
         elif re.match(r'\d+ weeks? (later|after)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            year = (base_date + RelativeDateTime(weeks=+offset)).year
-            week = (base_date + RelativeDateTime(weeks=+offset))
-            timex_val = week
+            timex_val = base_date + timedelta(weeks=offset)
         elif re.match(r'\d+ months? (ago|earlier|before)', timex, re.IGNORECASE):
             extra = 0
             offset = int(re.split(r'\s', timex)[0])
@@ -405,7 +414,7 @@ def ground(found_array, base_date):
             # Fix for the special case.
             if month == 0:
                 month = 12
-            timex_val = Date(year, month)
+            timex_val = datetime(year, month)
         elif re.match(r'\d+ months? (later|after)', timex, re.IGNORECASE):
             extra = 0
             offset = int(re.split(r'\s', timex)[0])
@@ -415,17 +424,18 @@ def ground(found_array, base_date):
             month = int((base_date.month + offset % 12) % 12)
             if month == 0:
                 month = 12
-            timex_val = Date(year, month)
+            timex_val = datetime(year, month)
         elif re.match(r'\d+ years? (ago|earlier|before)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = Date(base_date.year - offset)
+            timex_val = datetime(base_date.year - offset)
         elif re.match(r'\d+ years? (later|after)', timex, re.IGNORECASE):
             offset = int(re.split(r'\s', timex)[0])
-            timex_val = Date(base_date.year + offset)
+            timex_val = datetime(base_date.year + offset)
 
         if timex_val != 'UNKNOWN':
             new_found_array.append((timex_val, item[1]))
     return new_found_array
 
-# if __name__ == '__main__':
-#     print datetime_parsing('I have meetings on November 2nd and 30th. I will see you day after tomorrow. My game is on this Friday and next week')
+if __name__ == '__main__':
+    # print datetime_parsing('I have meetings on November 2nd and 3rd. My next holiday is whole of next week. I am free this friday and I am going on leave the day after tomorrow')
+    # print datetime_parsing('I will see you 1 weeks later.')
