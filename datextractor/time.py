@@ -435,7 +435,3 @@ def ground(found_array, base_date):
         if timex_val != 'UNKNOWN':
             new_found_array.append((timex_val, item[1]))
     return new_found_array
-
-if __name__ == '__main__':
-    # print datetime_parsing('I have meetings on November 2nd and 3rd. My next holiday is whole of next week. I am free this friday and I am going on leave the day after tomorrow')
-    # print datetime_parsing('I will see you 1 weeks later.')
