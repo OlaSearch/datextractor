@@ -1,173 +1,285 @@
 import re
 from datetime import timedelta, date, datetime
+import calendar
 
-"""
-The first step is the tag the text with <TIMEX>
-1. Extract => The meeting is 25 minutes from now => The meeting is <TIMEX>25 minutes from now<TIMEX>
-2. Convert to datetime
-"""
+# Variations of dates that the parser can capture
+year_variations = ['year', 'years', 'yrs']
+day_variations = ['days', 'day']
+minute_variations = ['minute', 'minutes', 'mins']
+week_variations = ['weeks', 'week', 'wks']
 
-"""
-Regular expression matches
-https://github.com/nltk/nltk_contrib/blob/master/nltk_contrib/timex.py
-Captured groups
-1. Integer + (year|day|week|month|night|minute|min)|unit of duration + duration
-2. today|yesterday|tomorrow|tonight
-3. this|next|last + year|day|week|month|night|minute|min
-4. this|next|last + (monday|tuesday|wednesday|thursday|friday|saturday|sunday)
-5. this|next|last + (january|february|march|april|may|june|july|august|september|october|november|december)
-6. ISO date
-7. Years
-8. Day after tomorrow
-"""
+# Variables used for RegEx Matching
+day_names = 'monday|tuesday|wednesday|thursday|friday|saturday|sunday'
+month_names = 'january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec'
+day_nearest_names = 'today|yesterday|tomorrow|tonight|tonite'
 numbers = "(^a(?=\s)|one|two|three|four|five|six|seven|eight|nine|ten| \
-          eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen| \
-          eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty| \
-          ninety|hundred|thousand)"
-day = "(monday|tuesday|wednesday|thursday|friday|saturday|sunday)"
-week_day = "(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)"
-month = "(january|february|march|april|may|june|july|august|september| \
-          october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)"
-dmy = "(year|day|week|month|night|minute|min)"
-rel_day = "(today|yesterday|tomorrow|tonight)"
-exp1 = "(before|after|earlier|later|ago|from now)"
-exp2 = "(this|next|last)"
-iso = "\d+[/-]\d+[/-]\d+ \d+:\d+:\d+\.\d+"
-year_exp = "((?<=\s)\d{4}|^\d{4})"
-regxp1 = "((\d+|(" + numbers + "[-\s]?)+) " + dmy + "s? " + exp1 + ")"
-regxp2 = "(" + exp2 + " (" + dmy + "|" + week_day + "|" + month + "))"
-# Matches Sun, 12 January 2012
-regxp3 = "(" + day + '[,\s]\s*\d{1,2}' + '\s+' + month + '\s+' + year_exp + ")" 
-# Matches 12 January 2012
-regxp4 = "(\d{1,2}" + '\s+' + month + '\s' + year_exp + ")"
-# Matches day after tomorrow
-regxp5 = "(" + dmy + " " + exp1 + " " + rel_day + ")"
-# Matches July 3nd
-regxp6 = "(" + month + " " + ".*\d{1,2}(st|nd|rd|th)" + ")"
+                    eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen| \
+                    eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty| \
+                    ninety|hundred|thousand)"
+re_dmy = '(' + "|".join(day_variations + minute_variations + year_variations + week_variations) + ')'
+re_duration = '(before|after|earlier|later|ago|from\snow)'
+re_year = "(?<=\s)\d{4}|^\d{4}"
+re_timeframe = 'this|next|following|previous|last'
+re_ordinal = 'st|nd|rd|th|first|second|third|fourth|fourth|' + re_timeframe
+re_time = '(?P<hour>\d+)(\:(?P<minute>\d{2}))?(?P<convention>am|pm|a\.m\.|p\.m\.)?'
 
-reg1 = re.compile(regxp1, re.IGNORECASE)
-reg2 = re.compile(regxp2, re.IGNORECASE)
-reg3 = re.compile(rel_day, re.IGNORECASE)
-reg4 = re.compile(iso)
-reg5 = re.compile(year_exp)
+# A list tuple of regular expressions / parser fn to match
+# The order of the match in this list matters, So always start with the widest match and narrow it down
+regex = [
+    (re.compile(
+        r'''
+        (
+            ((?P<dow>%s)[,\s]\s*)? #Matches Monday, 12 Jan 2012, 12 Jan 2012 etc
+            (?P<day>\d{1,2}) # Matches a digit
+            [-\s] # One or more space
+            (?P<month>%s) # Matches any month name
+            [-\s] # Space
+            (?P<year>\d{4}) # Year
+            ([,\s]\s*(%s))?
+        )
+        '''% (day_names, month_names, re_time),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(
+                int(m.group('year') if m.group('year') else base_date.year),
+                hashmonths[m.group('month').strip().lower()],
+                int(m.group('day') if m.group('day') else 1),
+            ) + timedelta(**convertTimetoHourMinute(
+                m.group('hour'),
+                m.group('minute'),
+                m.group('convention')
+            ))
+    ),
+    (re.compile(
+        r'''
+        (
+            ((?P<dow>%s)[,\s][-\s]*)? #Matches Monday, Jan 12 2012, Jan 12 2012 etc
+            (?P<month>%s) # Matches any month name
+            [-\s] # Space
+            ((?P<day>\d{1,2})) # Matches a digit
+            ([-\s](?P<year>\d{4})) # Year
+            ([,\s]\s*(%s))?
+        )
+        '''% (day_names, month_names, re_time),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(
+                int(m.group('year') if m.group('year') else base_date.year),
+                hashmonths[m.group('month').strip().lower()],
+                int(m.group('day') if m.group('day') else 1)
+            ) + timedelta(**convertTimetoHourMinute(
+                m.group('hour'),
+                m.group('minute'),
+                m.group('convention')
+            ))
+    ),
+    (re.compile(
+        r'''
+        (
+            (?P<month>%s) # Matches any month name
+            [-\s] # One or more space
+            (?P<day>\d{1,2}) # Matches a digit
+            [-\s]\s*?
+            (?P<year>\d{4}) # Year
+            ([,\s]\s*(%s))?
+        )
+        '''% (month_names, re_time),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(
+                int(m.group('year') if m.group('year') else base_date.year),
+                hashmonths[m.group('month').strip().lower()],
+                int(m.group('day') if m.group('day') else 1),
+            ) + timedelta(**convertTimetoHourMinute(
+                m.group('hour'),
+                m.group('minute'),
+                m.group('convention')
+            ))
+    ),
+    (re.compile(
+        r'''
+        (
+            ((?P<number>\d+|(%s[-\s]?)+)\s)? # Matches any number or string 25 or twenty five
+            (?P<unit>%s)s?\s # Matches days, months, years, weeks, minutes
+            (?P<duration>%s) # before, after, earlier, later, ago, from now
+            (\s*(?P<base_time>(%s)))?
+        )
+        '''% (numbers, re_dmy, re_duration, day_nearest_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): dateFromDuration(
+            base_date,
+            m.group('number'),
+            m.group('unit').lower(),
+            m.group('duration').lower(),
+            m.group('base_time')
+        )
+    ),
+    (re.compile(
+        r'''
+        (
+            (?P<ordinal>%s) # First quarter of 2014
+            \s+
+            quarter\sof
+            \s+
+            (?P<year>%s)
+        )
+        '''% (re_ordinal, re_year),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): dateFromQuarter(
+            base_date,
+            hashordinals[m.group('ordinal').lower()],
+            int(m.group('year') if m.group('year') else base.year)
+        )
+    ),
+    (re.compile(
+        r'''
+        (
+            (?P<ordinal_value>\d+)
+            (?P<ordinal>%s) # 1st January 2012
+            \s+
+            (?P<month>%s)
+            ([,\s]\s*(?P<year>%s))?
+        )
+        '''% (re_ordinal, month_names, re_year),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(
+                int(m.group('year') if m.group('year') else base_date.year),
+                int(hashmonths[m.group('month').lower()] if m.group('month') else 1),
+                int(m.group('ordinal_value') if m.group('ordinal_value') else 1),
+            )
+    ),
+    (re.compile(
+        r'''
+        (
+            (?P<month>%s)
+            \s+
+            (?P<ordinal_value>\d+)
+            (?P<ordinal>%s) # January 1st 2012
+            ([,\s]\s*(?P<year>%s))?
+        )
+        '''% (month_names, re_ordinal, re_year),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(
+                int(m.group('year') if m.group('year') else base_date.year),
+                int(hashmonths[m.group('month').lower()] if m.group('month') else 1),
+                int(m.group('ordinal_value') if m.group('ordinal_value') else 1),
+            )
+    ),
+    (re.compile(
+        r'''
+        (?P<time>%s) # this, next, following, previous, last
+        \s+
+        (?P<dmy>%s) # year, day, week, month, night, minute, min
+        '''% (re_timeframe, re_dmy),
+        (re.VERBOSE | re.IGNORECASE),
+        ),
+        lambda (m, base_date): dateFromRelativeWeekYear(base_date, m.group('time'), m.group('dmy'))
+    ),
+    (re.compile(
+        r'''
+        (?P<time>%s) # this, next, following, previous, last
+        \s+
+        (?P<dow>%s) # mon - fri
+        '''% (re_timeframe, day_names),
+        (re.VERBOSE | re.IGNORECASE),
+        ),
+        lambda (m, base_date): dateFromRelativeDay(base_date, m.group('time'), m.group('dow'))
+    ),
+    (re.compile(
+        r'''
+        (
+            (?P<day>\d{1,2}) # Day, Month
+            [-\s] # One or more space
+            (?P<month>%s)
+        )
+        '''% (month_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(
+                base_date.year,
+                hashmonths[m.group('month').strip().lower()],
+                int(m.group('day') if m.group('day') else 1)
+            )
+    ),
+    (re.compile(
+        r'''
+        (
+            (?P<month>%s) # Month, day
+            [-\s] # One or more space
+            ((?P<day>\d{1,2})\b) # Matches a digit January 12
+        )
+        '''% (month_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(
+                base_date.year,
+                hashmonths[m.group('month').strip().lower()],
+                int(m.group('day') if m.group('day') else 1)
+            )
+    ),
+    (re.compile(
+        r'''
+        (
+            (?P<month>%s) # Month, year
+            [-\s] # One or more space
+            ((?P<year>\d{1,4})\b) # Matches a digit January 12
+        )
+        '''% (month_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(
+                int(m.group('year')),
+                hashmonths[m.group('month').strip().lower()],
+                1
+            )
+    ),
+    (re.compile(
+        r'''
+        (?P<adverb>%s) # today, yesterday, tomorrow, tonight
+        '''% (day_nearest_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): dateFromAdverb(base_date, m.group('adverb'))
+    ),
+    (re.compile(
+        r'''
+        (?P<named_day>%s) # Mon - Sun
+        '''% (day_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): this_week_day(
+            base_date,
+            hashweekdays[m.group('named_day').lower()]
+        )
+    ),
+    (re.compile(
+        r'''
+        (?P<year>%s) # Year
+        '''% (re_year),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(int(m.group('year')), 1, 1)
+    ),
+    (re.compile(
+        r'''
+        (?P<month>%s) # Month
+        '''% (month_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda (m, base_date): datetime(
+            base_date.year,
+            hashmonths[m.group('month').lower()],
+            1
+        )
+    ),
+]
 
-reg_pattern_3 = re.compile(regxp3, re.IGNORECASE)
-reg_pattern_4 = re.compile(regxp4, re.IGNORECASE)
-reg_pattern_5 = re.compile(regxp5, re.IGNORECASE)
-reg_pattern_6 = re.compile(regxp6, re.IGNORECASE)
-
-def datetime_parsing(text, base_date = datetime.now()):
-    # Initialization
-    timex_found = []
-    found_array = []
-
-    # reg_pattern_3
-    found = reg_pattern_3.findall(text)
-    found = [a[0] for a in found if len(a) > 1]
-    for timex in found:
-        timex_found.append(timex)
-
-    # reg_pattern_4
-    found = reg_pattern_4.findall(text)
-    found = [a[0] for a in found if len(a) > 1]
-    for timex in found:
-        timex_found.append(timex)
-
-    # reg_pattern_5
-    found = reg_pattern_5.findall(text)
-    found = [a[0] for a in found if len(a) > 1]
-    for timex in found:
-        timex_found.append(timex)
-
-    # reg_pattern_6
-    # Check for multiple matches
-    found = reg_pattern_6.findall(text)
-    found = [a[0] for a in found if len(a) > 1]
-    for timex in found:
-        timex_found.append(timex)
-
-    # re.findall() finds all the substring matches, keep only the full
-    # matching string. Captures expressions such as 'number of days' ago, etc.
-    found = reg1.findall(text)
-    found = [a[0] for a in found if len(a) > 1]
-    for timex in found:
-        timex_found.append(timex)
-
-    # Variations of this thursday, next year, etc
-    found = reg2.findall(text)
-    found = [a[0] for a in found if len(a) > 1]
-    for timex in found:
-        timex_found.append(timex)
-
-    # today, tomorrow, etc
-    found = reg3.findall(text)
-    for timex in found:
-        timex_found.append(timex)
-
-    # ISO
-    found = reg4.findall(text)
-    for timex in found:
-        timex_found.append(timex)
-
-    # Year
-    found = reg5.findall(text)
-    for timex in found:
-        timex_found.append(timex)
-    # Tag only temporal expressions which haven't been tagged.
-    for timex in timex_found:
-        text = re.sub(timex + '(?!</TIMEX>)', '<TIMEX>' + timex + '</TIMEX>', text)
-
-    for m in re.finditer('<TIMEX>(.*?)</TIMEX>', text):
-        found_array.append((m.group(1), m.span()))
-    found_array = ground(found_array, base_date)
-    return found_array
-
-# Hash function for week days to simplify the grounding task.
-# [Mon..Sun] -> [0..6]
-hashweekdays = {
-    'monday': 0,
-    'mon': 0,
-    'tuesday': 1,
-    'tue': 1,
-    'wednesday': 2,
-    'wed': 2,
-    'thursday': 3,
-    'thu': 3,
-    'friday': 4,
-    'fri': 4,
-    'saturday': 5,
-    'sat': 5,
-    'sunday': 6,
-    'sun': 6}
-
-# Hash function for months to simplify the grounding task.
-# [Jan..Dec] -> [1..12]
-hashmonths = {
-    'january': 1,
-    'jan': 1,
-    'february': 2,
-    'feb': 2,
-    'march': 3,
-    'mar': 3,
-    'april': 4,
-    'apr': 4,
-    'may': 5,
-    'june': 6,
-    'jun': 6,
-    'july': 7,
-    'jul': 7,
-    'august': 8,
-    'aug': 8,
-    'september': 9,
-    'sep': 9,
-    'october': 10,
-    'oct': 10,
-    'november': 11,
-    'nov': 11,
-    'december': 12,
-    'dec': 12}
-
-# Hash number in words into the corresponding integer value
+# Hash of numbers
+# Append more number to modify your match
 def hashnum(number):
     if re.match(r'one|^a\b', number, re.IGNORECASE):
         return 1
@@ -228,210 +340,217 @@ def hashnum(number):
     if re.match(r'thousand', number, re.IGNORECASE):
       return 1000
 
-def next_weekday_by_day(weekday):
-    day = date.today() + timedelta(days=1)
+# Convert strings to numbers
+def convert_string_to_number(value):
+    if value == None:
+        return 1
+    if isinstance(value, int):
+        return value
+    if value.isdigit():
+        return int(value)
+    num_list = map(lambda s:hashnum(s), re.findall(numbers + '+', value, re.IGNORECASE))
+    return sum(num_list)
+
+# Convert time to hour, minute
+def convertTimetoHourMinute(hour, minute, convention):
+    if hour is None:
+        hour = 0
+    if minute is None:
+        minute = 0
+    if convention is None:
+        convention = 'am'
+
+    hour = int(hour)
+    minute = int(minute)
+
+    if convention == 'pm':
+        hour+=12
+
+    return { 'hours': hour, 'minutes': minute }
+
+# Quarter of a year
+def dateFromQuarter (base_date, ordinal, year):
+    interval = 3
+    month_start = interval * (ordinal - 1)
+    if month_start < 0:
+        month_start = 9
+    month_end = month_start + interval
+    if month_start == 0:
+        month_start = 1
+    return [
+        datetime(year, month_start, 1),
+        datetime(year, month_end, calendar.monthrange(year, month_end)[1])
+    ]
+
+# Converts relative day to time
+# this tuesday, last tuesday
+def dateFromRelativeDay(base_date, time, dow):
+    time = time.lower()
+    dow = dow.lower()
+    if time == 'this':
+        # Else day of week
+        num = hashweekdays[dow]
+        return this_week_day(base_date, num)
+    elif time == 'last' or time == 'previous':
+        # Else day of week
+        num = hashweekdays[dow]
+        return previous_week_day(base_date, num)
+    elif time == 'next' or time == 'following':
+        # Else day of week
+        num = hashweekdays[dow]
+        return next_week_day(base_date, num)
+
+# Converts relative day to time
+# this tuesday, last tuesday
+def dateFromRelativeWeekYear(base_date, time, dow):
+    if dow in year_variations:
+        if time == 'this':
+            return datetime(base_date.year, 1, 1)
+        elif time == 'last' or time == 'previous':
+            return datetime(base_date.year - 1, base_date.month, base_date.day)
+    elif dow in week_variations:
+        if time == 'this':
+            return base_date - timedelta(days=base_date.weekday())
+        elif time == 'last' or time == 'previous':
+            return base_date - timedelta(weeks=1)
+
+# Convert Day adverbs to dates
+# Tomorrow => Date
+# Today => Date
+def dateFromAdverb(base_date, name):
+    if name == 'today' or name == 'tonite' or name == 'tonight':
+        return datetime.today()
+    elif name == 'yesterday':
+        return base_date - timedelta(days=1)
+    elif name == 'tomorrow' or name == 'tom':
+        return base_date + timedelta(days=1)
+
+# Find dates from duration
+# Eg: 20 days from now
+# Doesnt support 20 days from last monday
+def dateFromDuration(base_date, numberAsString, unit, duration, base_time = None):
+    # Check if query is `2 days before yesterday` or `day before yesterday`
+    if base_time != None:
+        base_date = dateFromAdverb(base_date, base_time)
+    num = convert_string_to_number(numberAsString)
+    if unit in day_variations:
+        args = {'days': num}
+    elif unit in minute_variations:
+        args = {'minutes': num}
+    elif unit in week_variations:
+        args = {'weeks': num}
+    elif unit in year_variations:
+        args = {'years': num}
+
+    if duration == 'ago' or duration == 'before' or duration == 'earlier':
+        if ('years' in args):
+            return datetime(base_date.year - args['years'], base_date.month, base_date.day)
+        return base_date - timedelta(**args)
+    elif duration == 'after' or duration == 'later' or duration == 'from now':
+        if ('years' in args):
+            return datetime(base_date.year + args['years'], base_date.month, base_date.day)
+        return base_date + timedelta(**args)
+
+# Finds coming weekday
+def this_week_day(base_date, weekday):
+    day_of_week = base_date.weekday()
+    # If today is Tuesday and the query is `this monday`
+    # We should output the next_week monday
+    if day_of_week > weekday:
+        return next_week_day(base_date, weekday)
+    start_of_this_week = base_date - timedelta(days=day_of_week + 1)
+    day = start_of_this_week + timedelta(days=1)
     while day.weekday() != weekday:
         day = day + timedelta(days=1)
-
     return day
 
-def prev_weekday_by_day(weekday):
-    day = date.today() - timedelta(days=1)
+# Finds coming weekday
+def previous_week_day(base_date, weekday):
+    day = base_date.today() - timedelta(days=1)
     while day.weekday() != weekday:
         day = day - timedelta(days=1)
-
     return day
 
-# Given a timex_tagged_text and a Date object set to base_date,
-# returns timex_grounded_text
-def ground(found_array, base_date):
-    global month
-    global week_day
-    global hashweekdays
-    global hashmonths
-    global year_exp
+def next_week_day(base_date, weekday):
+    day_of_week = base_date.weekday()
+    end_of_this_week = base_date + timedelta(days=6 - day_of_week)
+    day = end_of_this_week + timedelta(days=1)
+    while day.weekday() != weekday:
+        day = day + timedelta(days=1)
+    return day
 
-    new_found_array = []
-    # Calculate the new date accordingly
-    for index, item in enumerate(found_array):
-        timex_val = 'UNKNOWN' # Default value
-        timex = item[0]
-        timex_ori = timex   # Backup original timex for later substitution
 
-        # If numbers are given in words, hash them into corresponding numbers.
-        # eg. twenty five days ago --> 25 days ago
-        if re.search(numbers, timex, re.IGNORECASE):
-            split_timex = re.split(r'\s(?=days?|months?|years?|weeks?|minutes?)', \
-                                                              timex, re.IGNORECASE)
-            value = split_timex[0]
-            unit = split_timex[1]
-            num_list = map(lambda s:hashnum(s),re.findall(numbers + '+', \
-                                          value, re.IGNORECASE))
-            timex = str(sum(num_list)) + ' ' + unit
+# Mapping of Month name and Value
+hashmonths = {
+    'january': 1,
+    'jan': 1,
+    'february': 2,
+    'feb': 2,
+    'march': 3,
+    'mar': 3,
+    'april': 4,
+    'apr': 4,
+    'may': 5,
+    'june': 6,
+    'jun': 6,
+    'july': 7,
+    'jul': 7,
+    'august': 8,
+    'aug': 8,
+    'september': 9,
+    'sep': 9,
+    'october': 10,
+    'oct': 10,
+    'november': 11,
+    'nov': 11,
+    'december': 12,
+    'dec': 12
+}
 
-        # If timex matches ISO format, remove 'time' and reorder 'date'
-        if re.match(r'\d+[/-]\d+[/-]\d+ \d+:\d+:\d+\.\d+', timex):
-            dmy = re.split(r'\s', timex)[0]
-            dmy = re.split(r'/|-', dmy)
-            timex_val = str(dmy[2]) + '-' + str(dmy[1]) + '-' + str(dmy[0])
+# Days to number mapping
+hashweekdays = {
+    'monday': 0,
+    'mon': 0,
+    'tuesday': 1,
+    'tue': 1,
+    'wednesday': 2,
+    'wed': 2,
+    'thursday': 3,
+    'thu': 3,
+    'friday': 4,
+    'fri': 4,
+    'saturday': 5,
+    'sat': 5,
+    'sunday': 6,
+    'sun': 6
+}
 
-        # Specific dates
-        elif re.match(r'\d{4}', timex):
-            timex_val = str(timex)
+# Ordinal to number
+hashordinals = {
+    'first': 1,
+    'second' : 2,
+    'third': 3,
+    'fourth': 4,
+    'forth': 4,
+    'last': -1
+}
 
-        # Matches Sun, 12 Jan 2010
-        elif re.match(r''+ week_day + '[,\s]\s*\d{1,2}' + '\s+' + month + '\s+' + year_exp, timex, re.IGNORECASE):
-            matches = re.findall('(.*)[,\s+](\d{1,2})\s(.*)\s(\d{4})', timex)[0]
-            timex_val = datetime(int(matches[3]),hashmonths[matches[2].lower()], int(matches[1]))
+# Parses date
+def datetime_parsing (text, base_date = datetime.now()):
+    matches = []
+    found_array = []
 
-        # Matches July 2nd
-        elif re.match(month + '\s+\d{1,2}(st|nd|rd|th)', timex, re.IGNORECASE):
-            matches = re.split(r'\s', timex)
-            all_dates = []
-            all_values = []
-            for m in matches:
-                if re.match('\d{1,2}(st|nd|rd|th)', m):
-                    d = int(re.findall('\d{1,2}', m)[0])
-                    all_dates.append(d)
-            for d in all_dates:
-                all_values.append(datetime(base_date.year, hashmonths[matches[0].lower()], d))
-            timex_val = all_values
+    # Find the position in the string
+    for r, fn in regex:
+        for m in r.finditer(text):
+            matches.append((m.group(), fn((m, base_date)), m.span()))
+    # Wrap the matched text with TAG element to prevent nested selections
+    for match, value, spans in matches:
+        subn = re.subn('(?!<TAG[^>]*?>)' + match + '(?![^<]*?</TAG>)', '<TAG>' + match + '</TAG>', text)
+        text = subn[0]
+        isSubstituted = subn[1]
+        if isSubstituted != 0:
+            found_array.append((match, value, spans))
 
-        # Relative dates
-        elif re.match(r'tonight|tonite|today', timex, re.IGNORECASE):
-            timex_val = base_date
-        elif re.match(r'yesterday', timex, re.IGNORECASE):
-            timex_val = base_date - timedelta(days=1)
-        elif re.match(r'tomorrow', timex, re.IGNORECASE):
-            timex_val = base_date + timedelta(days=1)
-        elif re.match(r'day after tomorrow', timex, re.IGNORECASE):
-            timex_val = base_date + timedelta(days=2)
-        elif re.match(r'day before tomorrow', timex, re.IGNORECASE):
-            timex_val = base_date - timedelta(days=2)
-
-        # Last night
-        elif re.match(r'last night', timex, re.IGNORECASE):
-            timex_val = base_date - timedelta(days=1)
-        # Weekday in the previous week.
-        elif re.match(r'last ' + week_day, timex, re.IGNORECASE):
-            day = hashweekdays[timex.split()[1].lower()]
-            timex_val = prev_weekday_by_day(day)
-
-        # Weekday in the current week.
-        elif re.match(r'this ' + week_day, timex, re.IGNORECASE):
-            day = hashweekdays[timex.split()[1].lower()]
-            timex_val = next_weekday_by_day(day)
-
-        # Weekday in the following week.
-        elif re.match(r'next ' + week_day + '\b', timex, re.IGNORECASE):
-            day = hashweekdays[timex.split()[1].lower()]
-            timex_val = next_weekday_by_day(day)
-
-        # Last, this, next week.
-        elif re.match(r'last week', timex, re.IGNORECASE):
-            timex_val = base_date - timedelta(weeks=1)
-        elif re.match(r'this week', timex, re.IGNORECASE):
-            timex_val = base_date - timedelta(days=base_date.weekday())
-        elif re.match(r'next week', timex, re.IGNORECASE):
-            timex_val = base_date + timedelta(weeks=1)
-
-        # Month in the previous year.
-        elif re.match(r'last ' + month, timex, re.IGNORECASE):
-            month = hashmonths[timex.split()[1].lower()]
-            timex_val = datetime(base_date.year - 1, month)
-
-        # Month in the current year.
-        elif re.match(r'this ' + month, timex, re.IGNORECASE):
-            month = hashmonths[timex.split()[1].lower()]
-            timex_val = datetime(base_date.year, month)
-
-        # Month in the following year.
-        elif re.match(r'next ' + month, timex, re.IGNORECASE):
-            month = hashmonths[timex.split()[1]]
-            timex_val = datetime(base_date.year + 1, month)
-        elif re.match(r'last month', timex, re.IGNORECASE):
-
-            # Handles the year boundary.
-            if base_date.month == 1:
-                timex_val = datetime(base_date.year - 1, 12)
-            else:
-                timex_val = datetime(base_date.year, base_date.month - 1)
-        elif re.match(r'this month', timex, re.IGNORECASE):
-                timex_val = datetime(base_date.year, base_date.month)
-        elif re.match(r'next month', timex, re.IGNORECASE):
-            # Handles the year boundary.
-            if base_date.month == 12:
-                timex_val = datetime(base_date.year + 1, 1, 1)
-            else:
-                timex_val = datetime(base_date.year, base_date.month + 1, 1)
-        elif re.match(r'last year', timex, re.IGNORECASE):
-            timex_val = datetime(base_date.year - 1)
-        elif re.match(r'this year', timex, re.IGNORECASE):
-            timex_val = datetime(base_date.year)
-        elif re.match(r'next year', timex, re.IGNORECASE):
-            timex_val = datetime(base_date.year + 1)
-        # Minutes past/future
-        elif re.match(r'\d+ minutes? (ago|earlier|before)', timex, re.IGNORECASE):
-            offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date - timedelta(minutes=offset)
-        elif re.match(r'\d+ minutes? (later|after|from now)', timex, re.IGNORECASE):
-            offset = int(re.split(r'\s', timex)[0])
-            d = datetime.now() + timedelta(minutes=offset)
-            timex_val = base_date + timedelta(minutes=offset)
-        elif re.match(r'\d+ mins? (ago|earlier|before)', timex, re.IGNORECASE):
-            offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date - timedelta(minutes=offset)
-        elif re.match(r'\d+ mins? (later|after|from now)', timex, re.IGNORECASE):
-            offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date - timedelta(minutes=offset)
-        # Days past/future
-        elif re.match(r'\d+ days? (ago|earlier|before)', timex, re.IGNORECASE):
-            # Calculate the offset by taking '\d+' part from the timex.
-            offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date - timedelta(days=offset)
-        elif re.match(r'\d+ days? (later|after|from now)', timex, re.IGNORECASE):
-            offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date + timedelta(days=offset)
-        elif re.match(r'\d+ weeks? (ago|earlier|before)', timex, re.IGNORECASE):
-            offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date - timedelta(weeks=offset)
-        elif re.match(r'\d+ weeks? (later|after)', timex, re.IGNORECASE):
-            offset = int(re.split(r'\s', timex)[0])
-            timex_val = base_date + timedelta(weeks=offset)
-        elif re.match(r'\d+ months? (ago|earlier|before)', timex, re.IGNORECASE):
-            extra = 0
-            offset = int(re.split(r'\s', timex)[0])
-
-            # Checks if subtracting the remainder of (offset / 12) to the base month
-            # crosses the year boundary.
-            if (base_date.month - offset % 12) < 1:
-                extra = 1
-
-            # Calculate new values for the year and the month.
-            year = int(base_date.year - offset // 12 - extra)
-            month = int((base_date.month - offset % 12) % 12)
-
-            # Fix for the special case.
-            if month == 0:
-                month = 12
-            timex_val = datetime(year, month)
-        elif re.match(r'\d+ months? (later|after)', timex, re.IGNORECASE):
-            extra = 0
-            offset = int(re.split(r'\s', timex)[0])
-            if (base_date.month + offset % 12) > 12:
-                extra = 1
-            year = int(base_date.year + offset // 12 + extra)
-            month = int((base_date.month + offset % 12) % 12)
-            if month == 0:
-                month = 12
-            timex_val = datetime(year, month)
-        elif re.match(r'\d+ years? (ago|earlier|before)', timex, re.IGNORECASE):
-            offset = int(re.split(r'\s', timex)[0])
-            timex_val = datetime(base_date.year - offset)
-        elif re.match(r'\d+ years? (later|after)', timex, re.IGNORECASE):
-            offset = int(re.split(r'\s', timex)[0])
-            timex_val = datetime(base_date.year + offset)
-
-        if timex_val != 'UNKNOWN':
-            new_found_array.append((timex_val, item[1]))
-    return new_found_array
+    # To preserve order of the match, sort based on the start position
+    return sorted(found_array, key = lambda match: match and match[2][0])
