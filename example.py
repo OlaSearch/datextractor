@@ -1,4 +1,4 @@
-from datextractor import datetime_parsing, tag_phone, tag_email, tag_url
+from datextractor import datetime_parsing
 
 text = '<p>The invoice was working on twenty five minutes ago. And today. Monday 12 January 2012. I am going another monday. And 12 days before</p>'
 # text = '<p>The invoice was working on twenty five minutes ago.</p>'

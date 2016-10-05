@@ -6,6 +6,5 @@ setup(
   name=name,
   version=version,
   license='MIT',
-  install_requires=['egenix-mx-base'],
   package_dir=package_dir
 )
