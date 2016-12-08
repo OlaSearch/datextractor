@@ -186,10 +186,9 @@ regex = [
         r'''
         (?P<time>%s) # this, next, following, previous, last
         \s+
-        ((?P<number>\d+|(%s[-\s]?)+)\s)?
         (?P<dmy>%s) # year, day, week, month, night, minute, min
-        ((\s|,\s|\s(%s))?\s*(%s))?
-        '''% (re_timeframe, numbers, re_dmy, re_separator, re_time),
+        ((\s|,\s|\s(%s))?\s*(%s)) # With time
+        '''% (re_timeframe, re_dmy, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE),
         ),
         lambda m, base_date: dateFromRelativeWeekYear(
@@ -202,6 +201,22 @@ regex = [
                 m.group('minute'),
                 m.group('convention')
             ))
+    ),
+    (re.compile(
+        r'''
+        (?P<time>%s) # this, next, following, previous, last
+        \s+
+        ((?P<number>\d+|(%s[-\s]?)+)\s)?
+        (?P<dmy>%s) # year, day, week, month, night, minute, min
+        '''% (re_timeframe, numbers, re_dmy),
+        (re.VERBOSE | re.IGNORECASE),
+        ),
+        lambda m, base_date: dateFromRelativeWeekYear(
+            base_date,
+            m.group('time'),
+            m.group('dmy'),
+            m.group('number')
+        )
     ),
     (re.compile(
         r'''
@@ -497,9 +512,10 @@ def dateFromRelativeDay(base_date, time, dow):
 
 # Converts relative day to time
 # this tuesday, last tuesday
-def dateFromRelativeWeekYear(base_date, time, dow, ordinal = 1):
+def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
     # If there is an ordinal (next 3 weeks) => return a start and end range
     # Reset date to start of the day
+    ordinal = int(ordinal) if ordinal is not None else 1
     d = datetime(base_date.year, base_date.month, base_date.day)
     if dow in year_variations:
         if time == 'this' or time == 'coming':
@@ -507,6 +523,12 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = 1):
         elif time == 'last' or time == 'previous':
             return datetime(d.year - 1, d.month, 1)
         elif time == 'next' or time == 'following':
+            if ordinal > 1:
+                values = []
+                while ordinal > 0:
+                    values.append(datetime(d.year + ordinal, d.month, 1))
+                    ordinal = ordinal - 1
+                return values
             return datetime(d.year + 1, d.month, 1)
         elif time == 'end of the':
             return datetime(d.year, 12, 31)
@@ -679,7 +701,11 @@ def datetime_parsing (text, base_date = datetime.now()):
         text = subn[0]
         isSubstituted = subn[1]
         if isSubstituted != 0:
-            found_array.append((match, value, spans))
+            if isinstance(value, list):
+                for item in value:
+                    found_array.append((match, item, spans))
+            else:
+                found_array.append((match, value, spans))
 
     # To preserve order of the match, sort based on the start position
     return sorted(found_array, key = lambda match: match and match[2][0])
