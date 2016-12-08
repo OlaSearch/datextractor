@@ -23,7 +23,7 @@ numbers = "(^a(?=\s)|one|two|three|four|five|six|seven|eight|nine|ten| \
 re_dmy = '(' + "|".join(day_variations + minute_variations + year_variations + week_variations + month_variations) + ')'
 re_duration = '(before|after|earlier|later|ago|from\snow)'
 re_year = "(19|20)\d{2}|^(19|20)\d{2}"
-re_timeframe = 'this|coming|next|following|previous|last|end\sof\sthe'
+re_timeframe = 'current|this|coming|next|following|previous|last|end\sof\sthe'
 re_ordinal = 'st|nd|rd|th|first|second|third|fourth|fourth|' + re_timeframe
 re_time = '(?P<hour>\d{1,2})(\:(?P<minute>\d{1,2})|(?P<convention>am|pm))'
 re_separator = 'of|at|on'
@@ -497,7 +497,7 @@ def dateFromRelativeDay(base_date, time, dow):
     base_date = datetime(base_date.year, base_date.month, base_date.day)
     time = time.lower()
     dow = dow.lower()
-    if time == 'this' or time == 'coming':
+    if time == 'this' or time == 'coming' or time == 'current':
         # Else day of week
         num = hashweekdays[dow]
         return this_week_day(base_date, num)
@@ -518,7 +518,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
     ordinal = int(ordinal) if ordinal is not None else 1
     d = datetime(base_date.year, base_date.month, base_date.day)
     if dow in year_variations:
-        if time == 'this' or time == 'coming':
+        if time == 'this' or time == 'coming' or time == 'current':
             return datetime(d.year, 1, 1)
         elif time == 'last' or time == 'previous':
             return datetime(d.year - 1, d.month, 1)
@@ -533,7 +533,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
         elif time == 'end of the':
             return datetime(d.year, 12, 31)
     elif dow in month_variations:
-        if time == 'this':
+        if time == 'this' or time == 'current':
             return datetime(d.year, d.month, d.day)
         elif time == 'last' or time == 'previous':
             return datetime(d.year, d.month - 1, d.day)
@@ -542,7 +542,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
         elif time == 'end of the':
             return datetime(d.year, d.month, calendar.monthrange(d.year, d.month)[1])
     elif dow in week_variations:
-        if time == 'this':
+        if time == 'this' or time == 'current':
             return d - timedelta(days=d.weekday())
         elif time == 'last' or time == 'previous':
             return d - timedelta(weeks=1)
@@ -552,7 +552,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
             day_of_week = base_date.weekday()
             return d + timedelta(days=6 - d.weekday())
     elif dow in day_variations:
-        if time == 'this':
+        if time == 'this' or time == 'current':
             return d
         elif time == 'last' or time == 'previous':
             return d - timedelta(days=1)
