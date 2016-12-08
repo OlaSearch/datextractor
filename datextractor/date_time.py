@@ -204,7 +204,7 @@ regex = [
     ),
     (re.compile(
         r'''
-        (?P<time>%s) # this, next, following, previous, last
+        (?P<time>%s) # this, next, following, previous, last => DATE RANGE
         \s+
         ((?P<number>\d+|(%s[-\s]?)+)\s)?
         (?P<dmy>%s) # year, day, week, month, night, minute, min
