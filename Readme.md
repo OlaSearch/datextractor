@@ -1,6 +1,6 @@
 # Date extractor for python
 
-### For python 2+. Didnt test in python 3. Hard dependency for date manipulation => `egenix-mx-base`
+### For python 2+ or 3. No external dependencies
 
 ## Usage
 
@@ -11,10 +11,14 @@ pip install -e git+ssh://git@gitlab.com/olasearch/datextractor.git#egg=datextrac
 In your python file
 
 ````
-from datextractor import tag, ground
-from mx.DateTime import *
+from datextractor import datetime_parsing
 
-tagged_text = tag('The game is on yesterday')
-date_object = today()
-print ground(tagged_text, date_object)
+// Outputs an array of tuples
+print datetime_parsing('The game is this year')
+
+[('this year', datetime.datetime(2016, 1, 1, 0, 0), (12, 21))]
+
+1. String that was matched `this year`
+2. datetime object
+3. string position `start` and `end`
 ````
