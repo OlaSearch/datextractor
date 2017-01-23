@@ -528,6 +528,12 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
         if time == 'this' or time == 'coming' or time == 'current':
             return datetime(d.year, 1, 1)
         elif time == 'last' or time == 'previous':
+            if ordinal > 1:
+                values = []
+                while ordinal > 0:
+                    values.append(datetime(d.year - ordinal, d.month, 1))
+                    ordinal = ordinal - 1
+                return values
             return datetime(d.year - ordinal, d.month, 1)
         elif time == 'next' or time == 'following':
             if ordinal > 1:
