@@ -515,13 +515,20 @@ def dateFromRelativeDay(base_date, time, dow):
 def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
     # If there is an ordinal (next 3 weeks) => return a start and end range
     # Reset date to start of the day
-    ordinal = int(ordinal) if ordinal is not None else 1
+    # ordinal = int(ordinal) if ordinal is not None and ordinal.isdigit() else 1
+    if ordinal is not None and ordinal.isdigit():
+        ordinal = int(ordinal)
+    else:
+        if ordinal in hashordinals:
+            ordinal = hashordinals[ordinal]
+        else:
+            ordinal = 1
     d = datetime(base_date.year, base_date.month, base_date.day)
     if dow in year_variations:
         if time == 'this' or time == 'coming' or time == 'current':
             return datetime(d.year, 1, 1)
         elif time == 'last' or time == 'previous':
-            return datetime(d.year - 1, d.month, 1)
+            return datetime(d.year - ordinal, d.month, 1)
         elif time == 'next' or time == 'following':
             if ordinal > 1:
                 values = []
@@ -678,10 +685,26 @@ hashweekdays = {
 # Ordinal to number
 hashordinals = {
     'first': 1,
+    'one': 1,
     'second' : 2,
+    'two' : 2,
     'third': 3,
+    'three': 3,
     'fourth': 4,
+    'four': 4,
     'forth': 4,
+    'five': 5,
+    'fifth': 5,
+    'six': 6,
+    'sixth': 6,
+    'seven': 7,
+    'seventh': 7,
+    'eight': 8,
+    'eighth': 8,
+    'nine': 9,
+    'ninth': 9,
+    'ten': 10,
+    'tenth': 10,
     'last': -1
 }
 
