@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 from datetime import timedelta, date, datetime
+from dateutil.relativedelta import relativedelta
 import calendar
 
 # Variations of dates that the parser can capture
@@ -531,7 +532,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
             if ordinal > 1:
                 values = []
                 while ordinal > 0:
-                    values.append(datetime(d.year - ordinal, d.month, 1))
+                    values.append(datetime(d.year, d.month, 1) + relativedelta(years=-ordinal))
                     ordinal = ordinal - 1
                 return values
             return datetime(d.year - ordinal, d.month, 1)
@@ -539,7 +540,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
             if ordinal > 1:
                 values = []
                 while ordinal > 0:
-                    values.append(datetime(d.year + ordinal, d.month, 1))
+                    values.append(datetime(d.year, d.month, 1) + relativedelta(years=+ordinal))
                     ordinal = ordinal - 1
                 return values
             return datetime(d.year + 1, d.month, 1)
@@ -549,7 +550,13 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
         if time == 'this' or time == 'current':
             return datetime(d.year, d.month, d.day)
         elif time == 'last' or time == 'previous':
-            return datetime(d.year, d.month - 1, d.day)
+            if ordinal > 1:
+                values = []
+                while ordinal > 0:
+                    values.append(datetime(d.year, d.month, d.day) + relativedelta(months=-ordinal))
+                    ordinal = ordinal - 1
+                return values
+            return datetime(d.year, d.month, d.day) + relativedelta(months=-1)
         elif time == 'next' or time == 'following':
             return datetime(d.year, d.month + 1, d.day)
         elif time == 'end of the':
@@ -558,8 +565,20 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
         if time == 'this' or time == 'current':
             return d - timedelta(days=d.weekday())
         elif time == 'last' or time == 'previous':
+            if ordinal > 1:
+                values = []
+                while ordinal > 0:
+                    values.append(d - timedelta(weeks=ordinal))
+                    ordinal = ordinal - 1
+                return values
             return d - timedelta(weeks=1)
         elif time == 'next' or time == 'following':
+            if ordinal > 1:
+                values = []
+                while ordinal > 0:
+                    values.append(d + timedelta(weeks=ordinal))
+                    ordinal = ordinal - 1
+                return values
             return d + timedelta(weeks=1)
         elif time == 'end of the':
             day_of_week = base_date.weekday()
@@ -568,8 +587,20 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
         if time == 'this' or time == 'current':
             return d
         elif time == 'last' or time == 'previous':
+            if ordinal > 1:
+                values = []
+                while ordinal > 0:
+                    values.append(d - timedelta(days=ordinal))
+                    ordinal = ordinal - 1
+                return values
             return d - timedelta(days=1)
         elif time == 'next' or time == 'following':
+            if ordinal > 1:
+                values = []
+                while ordinal > 0:
+                    values.append(d + timedelta(days=ordinal))
+                    ordinal = ordinal - 1
+                return values
             return d + timedelta(days=1)
         elif time == 'end of the':
             return datetime(d.year, d.month, d.day, 23, 59, 59)

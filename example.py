@@ -1,6 +1,8 @@
 from datextractor import datetime_parsing
 
-text = '<p>gdp of last 2 year</p>'
+text = '<p>gdp of next 2 weeks</p>'
+# text = '<p>gdp of last month</p>'
+# Todo : last 2 months. range
 # text = '<p>The invoice was working on twenty five minutes ago.</p>'
 # print datetime_parsing(text)
 # tagged_text = datetime_parsing('The event is 25 min from now. The invoice was working on 10 days later. Hello my email address is rmdort@gmail.com and hello@hotmail.com. Hello my phone number is +9190291420. The current year is 2010. Day before tomorrow')
@@ -10,4 +12,4 @@ text = '<p>gdp of last 2 year</p>'
 # print tag_email('Hello my email address is rmdort@gmail.com and hello@hotmail.c')
 # print tag_url('Hello my website url is http://www.olasearch.com')
 
-print datetime_parsing(text)
+print (datetime_parsing(text))
