@@ -61,6 +61,7 @@ regex = [
         r'''
         (
             ((?P<dow>%s)[,\s][-\s]*)? #Matches Monday, Jan 12 2012, Jan 12 2012 etc
+            (\b)
             (?P<month>%s) # Matches any month name
             [-\s] # Space
             ((?P<day>\d{1,2})) # Matches a digit
