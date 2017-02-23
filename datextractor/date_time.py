@@ -34,6 +34,7 @@ re_separator = 'of|at|on'
 regex = [
     (re.compile(
         r'''
+        (\b)
         (
             ((?P<dow>%s)[,\s]\s*)? #Matches Monday, 12 Jan 2012, 12 Jan 2012 etc
             (?P<day>\d{1,2}) # Matches a digit
@@ -44,6 +45,7 @@ regex = [
             (?P<year>%s) # Year
             ((\s|,\s|\s(%s))?\s*(%s))?
         )
+        (\b)
         '''% (day_names, re_ordinal, month_names, re_year, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -65,6 +67,7 @@ regex = [
             (?P<month>%s) # Matches any month name
             [-\s] # Space
             ((?P<day>\d{1,2})) # Matches a digit
+            ([\,])?
             (%s)?
             ([-\s](?P<year>%s))? # Year
             ((\s|,\s|\s(%s))?\s*(%s))?
@@ -84,6 +87,7 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (
             (?P<month>%s) # Matches any month name
             [-\s] # One or more space
@@ -93,6 +97,7 @@ regex = [
             (?P<year>%s) # Year
             ((\s|,\s|\s(%s))?\s*(%s))?
         )
+        (\b)
         '''% (month_names, re_ordinal, re_year, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -108,6 +113,7 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (
             ((?P<number>\d+|(%s[-\s]?)+)\s)? # Matches any number or string 25 or twenty five
             (?P<unit>%s)s?\s # Matches days, months, years, weeks, minutes
@@ -115,6 +121,7 @@ regex = [
             (\s*(?P<base_time>(%s)))?
             ((\s|,\s|\s(%s))?\s*(%s))?
         )
+        (\b)
         '''% (numbers, re_dmy, re_duration, day_nearest_names, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -132,6 +139,7 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (
             (?P<ordinal>%s) # First quarter of 2014
             \s+
@@ -139,6 +147,7 @@ regex = [
             \s+
             (?P<year>%s)
         )
+        (\b)
         '''% (re_ordinal, re_year),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -150,6 +159,7 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (
             (?P<ordinal_value>\d+)
             (?P<ordinal>%s) # 1st January 2012
@@ -157,6 +167,7 @@ regex = [
             (?P<month>%s)
             ([,\s]\s*(?P<year>%s))?
         )
+        (\b)
         '''% (re_ordinal, re_separator, month_names, re_year),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -168,6 +179,7 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (
             (?P<month>%s)
             \s+
@@ -175,6 +187,7 @@ regex = [
             (?P<ordinal>%s) # January 1st 2012
             ([,\s]\s*(?P<year>%s))?
         )
+        (\b)
         '''% (month_names, re_ordinal, re_year),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -186,18 +199,19 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (?P<time>%s) # this, next, following, previous, last
         \s+
         (?P<dmy>%s) # year, day, week, month, night, minute, min
         ((\s|,\s|\s(%s))?\s*(%s)) # With time
+        (\b)
         '''% (re_timeframe, re_dmy, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE),
         ),
         lambda m, base_date: dateFromRelativeWeekYear(
             base_date,
             m.group('time'),
-            m.group('dmy'),
-            m.group('number')
+            m.group('dmy')
         ) + timedelta(**convertTimetoHourMinute(
                 m.group('hour'),
                 m.group('minute'),
@@ -206,10 +220,12 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (?P<time>%s) # this, next, following, previous, last => DATE RANGE
         \s+
-        ((?P<number>\d+|(%s[-\s]?)+)\s)?
+        ((?P<number>\d+|(%s[-\s]?)+)\s*)?
         (?P<dmy>%s) # year, day, week, month, night, minute, min
+        (\b)
         '''% (re_timeframe, numbers, re_dmy),
         (re.VERBOSE | re.IGNORECASE),
         ),
@@ -222,10 +238,12 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (?P<time>%s) # this, next, following, previous, last
         \s+
         (?P<dow>%s) # mon - fri
         ((\s|,\s|\s(%s))?\s*(%s))?
+        (\b)
         '''% (re_timeframe, day_names, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE),
         ),
@@ -241,12 +259,14 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (
             (?P<day>\d{1,2}) # Day, Month
             (%s)
             [-\s] # One or more space
             (?P<month>%s)
         )
+        (\b)
         '''% (re_ordinal, month_names),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -258,12 +278,14 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (
             (?P<month>%s) # Month, day
             [-\s] # One or more space
             ((?P<day>\d{1,2})\b) # Matches a digit January 12
             (%s)?
         )
+        (\b)
         '''% (month_names, re_ordinal),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -275,11 +297,13 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (
             (?P<month>%s) # Month, year
             [-\s] # One or more space
             ((?P<year>\d{1,4})\b) # Matches a digit January 12
         )
+        (\b)
         '''% (month_names),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -291,12 +315,14 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (
             (?P<month>\d{1,2}) # MM/DD or MM/DD/YYYY
             /
             ((?P<day>\d{1,2}))
             (/(?P<year>%s))?
         )
+        (\b)
         '''% (re_year),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -308,6 +334,7 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (?P<adverb>%s) # today, yesterday, tomorrow, tonight
         ((\s|,\s|\s(%s))?\s*(%s))?
         '''% (day_nearest_names, re_separator, re_time),
@@ -324,7 +351,9 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (?P<named_day>%s) # Mon - Sun
+        (\b)
         '''% (day_names),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -518,7 +547,7 @@ def dateFromRelativeDay(base_date, time, dow):
 
 # Converts relative day to time
 # this tuesday, last tuesday
-def dateFromRelativeWeekYear(base_date, time, dow, ordinal):
+def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
     # If there is an ordinal (next 3 weeks) => return a start and end range
     # Reset date to start of the day
     # ordinal = int(ordinal) if ordinal is not None and ordinal.isdigit() else 1
@@ -766,11 +795,7 @@ def datetime_parsing (text, base_date = datetime.now()):
         text = subn[0]
         isSubstituted = subn[1]
         if isSubstituted != 0:
-            if isinstance(value, list):
-                for item in value:
-                    found_array.append((match, item, spans))
-            else:
-                found_array.append((match, value, spans))
+            found_array.append((match, value, spans))
 
     # To preserve order of the match, sort based on the start position
     return sorted(found_array, key = lambda match: match and match[2][0])
