@@ -1,7 +1,7 @@
 import sys
 from setuptools import setup, find_packages
 name = 'datextractor'
-version='0.0.1'
+version='0.0.2'
 package_dir = {name: name}
 required=['python-dateutil']
 if sys.version_info < (3, 3):
