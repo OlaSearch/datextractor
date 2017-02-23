@@ -1,6 +1,6 @@
 from datextractor import datetime_parsing
 
-text = '<p>gdp of 2015</p>'
+text = '<p>Did mayoclinic want when I want</p>'
 # text = '<p>gdp of last month</p>'
 # Todo : last 2 months. range
 # text = '<p>The invoice was working on twenty five minutes ago.</p>'

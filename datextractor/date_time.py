@@ -335,7 +335,9 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (?P<year>%s) # Year
+        (\b)
         '''% (re_year),
         (re.VERBOSE | re.IGNORECASE)
         ),
@@ -343,7 +345,9 @@ regex = [
     ),
     (re.compile(
         r'''
+        (\b)
         (?P<month>%s) # Month
+        (\b)
         '''% (month_names_long),
         (re.VERBOSE | re.IGNORECASE)
         ),
