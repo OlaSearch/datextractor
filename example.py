@@ -1,11 +1,11 @@
 from datextractor import datetime_parsing
 
 # text = '<p>First quarter of 2016 and tomorrow and next 2 years</p>'
-text = '<p>gdp of last month</p>'
+text = '<p>last two years</p>'
 # Todo : last 2 months. range
 # text = '<p>The invoice was working on twenty five minutes ago.</p>'
 # print datetime_parsing(text)
-text = 'The event is 25 min from now. The invoice was working on 10 days later. Hello my email address is rmdort@gmail.com and hello@hotmail.com. Hello my phone number is +9190291420. The current year is 2010. Day before tomorrow'
+# text = 'The event is 25 min from now. The invoice was working on 10 days later. Hello my email address is rmdort@gmail.com and hello@hotmail.com. Hello my phone number is +9190291420. The current year is 2010. Day before tomorrow'
 # tagged_text = tag('The invoice was working on 10 days later.')
 # print tagged_text
 # print tag_phone('Hello my phone number is +91 90291420')

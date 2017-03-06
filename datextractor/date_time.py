@@ -514,6 +514,7 @@ def convertTimetoHourMinute(hour, minute, convention):
 # Quarter of a year
 def dateFromQuarter (base_date, ordinal, year):
     interval = 3
+    ordinal = ordinal.strip()
     month_start = interval * (ordinal - 1)
     if month_start < 0:
         month_start = 9
@@ -551,6 +552,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
     # If there is an ordinal (next 3 weeks) => return a start and end range
     # Reset date to start of the day
     # ordinal = int(ordinal) if ordinal is not None and ordinal.isdigit() else 1
+    ordinal = ordinal.strip()
     if ordinal is not None and ordinal.isdigit():
         ordinal = int(ordinal)
     else:
