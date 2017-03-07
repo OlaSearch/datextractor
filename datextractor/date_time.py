@@ -652,6 +652,8 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
 def dateFromAdverb(base_date, name):
     # Reset date to start of the day
     d = datetime(base_date.year, base_date.month, base_date.day)
+    if name:
+        name = name.lower()
     if name == 'today' or name == 'tonite' or name == 'tonight':
         return d.today()
     elif name == 'yesterday':
@@ -790,6 +792,9 @@ hashordinals = {
 def datetime_parsing (text, base_date = datetime.now()):
     matches = []
     found_array = []
+
+    # Lowercase text for easy Matching
+    text = text.lower()
 
     # Find the position in the string
     for r, fn in regex:

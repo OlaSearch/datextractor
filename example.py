@@ -1,7 +1,7 @@
 from datextractor import datetime_parsing
 
 # text = '<p>First quarter of 2016 and tomorrow and next 2 years</p>'
-text = '<p>Next week. 12th March 2012, March 12 2012</p>'
+text = '<p>Week after tomorrow</p>'
 # Todo : last 2 months. range
 # text = '<p>The invoice was working on twenty five minutes ago.</p>'
 # print datetime_parsing(text)
