@@ -530,7 +530,9 @@ def dateFromQuarter (base_date, ordinal, year):
 def dateFromRelativeDay(base_date, time, dow):
     # Reset date to start of the day
     base_date = datetime(base_date.year, base_date.month, base_date.day)
-    time = time.lower()
+    # Convert to lower
+    if time:
+        time = time.lower()
     dow = dow.lower()
     if time == 'this' or time == 'coming' or time == 'current':
         # Else day of week
@@ -551,6 +553,9 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
     # If there is an ordinal (next 3 weeks) => return a start and end range
     # Reset date to start of the day
     # ordinal = int(ordinal) if ordinal is not None and ordinal.isdigit() else 1
+    # Convert to lower
+    if time:
+        time = time.lower()
     if ordinal is not None:
         ordinal = ordinal.strip()
     if ordinal is not None and ordinal.isdigit():
