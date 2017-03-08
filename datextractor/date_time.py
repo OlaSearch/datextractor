@@ -40,13 +40,14 @@ regex = [
             (?P<day>\d{1,2}) # Matches a digit
             (%s)?
             [-\s] # One or more space
+            ((%s)\s)?
             (?P<month>%s) # Matches any month name
             [-\s] # Space
             (?P<year>%s) # Year
             ((\s|,\s|\s(%s))?\s*(%s))?
         )
         (\b)
-        '''% (day_names, re_ordinal, month_names, re_year, re_separator, re_time),
+        '''% (day_names, re_ordinal, re_separator, month_names, re_year, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE)
         ),
         lambda m, base_date: datetime(
