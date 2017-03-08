@@ -142,6 +142,25 @@ regex = [
         r'''
         (\b)
         (
+            (?P<duration>%s)\s # before, after, earlier, later, ago, from now
+            ((?P<number>\d+|(%s[-\s]?)+)\s)? # Matches any number or string 25 or twenty five
+            (?P<unit>%s)s
+        )
+        (\b)
+        '''% (re_duration, numbers, re_dmy),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: dateFromDuration(
+            base_date,
+            m.group('number'),
+            m.group('unit').lower(),
+            m.group('duration').lower()
+        )
+    ),
+    (re.compile(
+        r'''
+        (\b)
+        (
             (?P<ordinal>%s) # First quarter of 2014
             \s+
             quarter\sof
@@ -666,6 +685,7 @@ def dateFromAdverb(base_date, name):
 # Eg: 20 days from now
 # Doesnt support 20 days from last monday
 def dateFromDuration(base_date, numberAsString, unit, duration, base_time = None):
+    print (numberAsString, unit)
     # Check if query is `2 days before yesterday` or `day before yesterday`
     if base_time != None:
         base_date = dateFromAdverb(base_date, base_time)
