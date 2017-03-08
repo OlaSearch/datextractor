@@ -141,3 +141,9 @@ class DateTimeParsingTestCases(TestCase):
     self.assertIn('10th of January 2014'.lower(), parser[0])
     self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '10-01-2014')
     self.assertEqual(len(parser), 1)
+
+    input_text = '10 Feb'
+    parser = datetime_parsing(input_text)
+    self.assertIn(input_text.lower(), parser[0])
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '10-02-2017')
+    self.assertEqual(len(parser), 1)

@@ -263,7 +263,7 @@ regex = [
         (\b)
         (
             (?P<day>\d{1,2}) # Day, Month
-            (%s)
+            (%s)?
             [-\s] # One or more space
             (?P<month>%s)
         )
