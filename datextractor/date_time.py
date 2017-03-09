@@ -38,6 +38,7 @@ regex = [
         (\b)
         (
             (?P<day>\d{1,2}) # Matches a digit
+            (%s)?
             (\s)
             (?P<month>%s) # Matches any month name
             (\s)
@@ -46,7 +47,7 @@ regex = [
             (?P<year>\d{4})
         )
         (\b)
-        '''%(month_names),
+        '''%(re_ordinal, month_names),
         (re.VERBOSE | re.IGNORECASE)
         ),
         lambda m, base_date: dateForHoundify(
