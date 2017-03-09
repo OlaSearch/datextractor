@@ -70,6 +70,7 @@ regex = [
             ((?P<day>\d{1,2})) # Matches a digit
             ([\,])?
             (%s)?
+            ([\,])?
             ([-\s](?P<year>%s))? # Year
             ((\s|,\s|\s(%s))?\s*(%s))?
         )
