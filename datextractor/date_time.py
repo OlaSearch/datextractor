@@ -37,8 +37,8 @@ regex = [
         r'''
         (\b)
         (
-            (?P<day>\d{1,2}) # Matches a digit
-            (%s)?
+            (?P<day>\d{1,2})? # Matches a digit
+            (?P<ordinal>%s)?
             (\s)
             (?P<month>%s) # Matches any month name
             (\s)
@@ -55,6 +55,7 @@ regex = [
                 hashmonths[m.group('month').strip().lower()],
                 int(m.group('day') if m.group('day') else 1),
                 int(m.group('day_error') if m.group('day_error') else 1),
+                m.group('ordinal'),
             )
     ),
     (re.compile(
@@ -558,7 +559,10 @@ def convertTimetoHourMinute(hour, minute, convention):
     return { 'hours': hour, 'minutes': minute }
 
 # Date from houndify
-def dateForHoundify (year, month, day, incorrect_day):
+def dateForHoundify (year, month, day, incorrect_day, ordinal):
+    if ordinal is not None:
+        ordinal = ordinal.strip()
+        day = hashordinals[ordinal]
     if incorrect_day and year > 1000:
         year_str = str(year)
         year = str(incorrect_day) + year_str[1:]
