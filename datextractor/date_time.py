@@ -23,7 +23,7 @@ numbers = "(^a(?=\s)|one|two|three|four|five|six|seven|eight|nine|ten| \
                     ninety|hundred|thousand)"
 re_dmy = '(' + "|".join(day_variations + minute_variations + year_variations + week_variations + month_variations) + ')'
 re_duration = '(before|after|earlier|later|ago|from\snow)'
-re_year = "(19|20)\d{2}|^(19|20)\d{2}"
+re_year = "(17|18|19|20)\d{2}|^(17|18|19|20)\d{2}"
 re_timeframe = 'current|this|coming|next|following|previous|last|end\sof\sthe'
 re_ordinal = 'st|nd|rd|th|first|second|third|fourth|fourth|' + re_timeframe
 re_time = '(?P<hour>\d{1,2})(\:(?P<minute>\d{1,2})|(?P<convention>am|pm))'
@@ -32,6 +32,30 @@ re_separator = 'of|at|on'
 # A list tuple of regular expressions / parser fn to match
 # The order of the match in this list matters, So always start with the widest match and narrow it down
 regex = [
+    # Houndify bug fix
+    (re.compile(
+        r'''
+        (\b)
+        (
+            (?P<day>\d{1,2}) # Matches a digit
+            (\s)
+            (?P<month>%s) # Matches any month name
+            (\s)
+            (?P<day_error>\d{1,2})
+            (\s+)?
+            (?P<year>\d{4})
+        )
+        (\b)
+        '''%(month_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: dateForHoundify(
+                int(m.group('year') if m.group('year') else base_date.year),
+                hashmonths[m.group('month').strip().lower()],
+                int(m.group('day') if m.group('day') else 1),
+                int(m.group('day_error') if m.group('day_error') else 1),
+            )
+    ),
     (re.compile(
         r'''
         (\b)
@@ -531,6 +555,13 @@ def convertTimetoHourMinute(hour, minute, convention):
         hour+=12
 
     return { 'hours': hour, 'minutes': minute }
+
+# Date from houndify
+def dateForHoundify (year, month, day, incorrect_day):
+    if incorrect_day and year > 1000:
+        year_str = str(year)
+        year = str(incorrect_day) + year_str[1:]
+    return datetime(int(year), month, day)
 
 # Quarter of a year
 def dateFromQuarter (base_date, ordinal, year):
