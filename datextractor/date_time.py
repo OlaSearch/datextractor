@@ -20,19 +20,49 @@ day_nearest_names = 'today|yesterday|tomorrow|tonight|tonite'
 numbers = "(^a(?=\s)|one|two|three|four|five|six|seven|eight|nine|ten| \
                     eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen| \
                     eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty| \
-                    ninety|hundred|thousand)"
+                    ninety|hundred|thousand|first|second|third|forth|fourth|fifth)"
 re_dmy = '(' + "|".join(day_variations + minute_variations + year_variations + week_variations + month_variations) + ')'
 re_duration = '(before|after|earlier|later|ago|from\snow)'
 re_year = "(17|18|19|20)\d{2}|^(17|18|19|20)\d{2}"
 re_timeframe = 'current|this|coming|next|following|previous|last|end\sof\sthe'
 re_ordinal = 'st|nd|rd|th|first|second|third|fourth|fourth|' + re_timeframe
+re_number_end = ['st', 'nd', 'rd', 'th']
 re_time = '(?P<hour>\d{1,2})(\:(?P<minute>\d{1,2})|(?P<convention>am|pm))'
 re_separator = 'of|at|on'
+all_numbers = numbers + '|first|second|third|forth|fourth|fifth|sixth|seventh|eighth|ninth|tenth'
 
 # A list tuple of regular expressions / parser fn to match
 # The order of the match in this list matters, So always start with the widest match and narrow it down
 regex = [
     # Houndify bug fix
+    (re.compile(
+        r'''
+        (\b)
+        (
+            ((?P<number_1>\d+|(%s[-\s]?)+))? # Matches any number or string 25 or twenty five
+            (\s)?
+            (%s\s)?
+            (\s)?
+            ((%s)\s)?
+            (?P<month>%s) # Matches any month name
+            (\s)
+            ((?P<number_2>\d+|(%s))\s) # Matches any month name
+            (%s\s)?
+            ((?P<number_3>\d+|(%s))) # Matches any month name
+            (%s\s)?
+        )
+        (\b)
+        '''%(numbers, re_ordinal, re_separator, month_names, all_numbers, re_ordinal, all_numbers, re_ordinal),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: dateFromWords(
+            base_date,
+            m.group('number_1'),
+            m.group('month'),
+            m.group('number_2'),
+            m.group('number_3')
+        )
+    ),
     (re.compile(
         r'''
         (\b)
@@ -473,62 +503,64 @@ regex = [
 def hashnum(number):
     if re.match(r'one|^a\b', number, re.IGNORECASE):
         return 1
-    if re.match(r'two', number, re.IGNORECASE):
+    if re.match(r'two\b', number, re.IGNORECASE):
         return 2
-    if re.match(r'three', number, re.IGNORECASE):
+    if re.match(r'three\b', number, re.IGNORECASE):
         return 3
-    if re.match(r'four', number, re.IGNORECASE):
+    if re.match(r'four\b', number, re.IGNORECASE):
         return 4
-    if re.match(r'five', number, re.IGNORECASE):
+    if re.match(r'five\b', number, re.IGNORECASE):
         return 5
-    if re.match(r'six', number, re.IGNORECASE):
+    if re.match(r'six\b', number, re.IGNORECASE):
         return 6
-    if re.match(r'seven', number, re.IGNORECASE):
+    if re.match(r'seven\b', number, re.IGNORECASE):
         return 7
-    if re.match(r'eight', number, re.IGNORECASE):
+    if re.match(r'eight\b', number, re.IGNORECASE):
         return 8
-    if re.match(r'nine', number, re.IGNORECASE):
+    if re.match(r'nine\b', number, re.IGNORECASE):
         return 9
-    if re.match(r'ten', number, re.IGNORECASE):
+    if re.match(r'ten\b', number, re.IGNORECASE):
         return 10
-    if re.match(r'eleven', number, re.IGNORECASE):
+    if re.match(r'eleven\b', number, re.IGNORECASE):
         return 11
-    if re.match(r'twelve', number, re.IGNORECASE):
+    if re.match(r'twelve\b', number, re.IGNORECASE):
         return 12
-    if re.match(r'thirteen', number, re.IGNORECASE):
+    if re.match(r'thirteen\b', number, re.IGNORECASE):
         return 13
-    if re.match(r'fourteen', number, re.IGNORECASE):
+    if re.match(r'fourteen\b', number, re.IGNORECASE):
         return 14
-    if re.match(r'fifteen', number, re.IGNORECASE):
+    if re.match(r'fifteen\b', number, re.IGNORECASE):
         return 15
-    if re.match(r'sixteen', number, re.IGNORECASE):
+    if re.match(r'sixteen\b', number, re.IGNORECASE):
         return 16
-    if re.match(r'seventeen', number, re.IGNORECASE):
+    if re.match(r'seventeen\b', number, re.IGNORECASE):
         return 17
-    if re.match(r'eighteen', number, re.IGNORECASE):
+    if re.match(r'eighteen\b', number, re.IGNORECASE):
         return 18
-    if re.match(r'nineteen', number, re.IGNORECASE):
+    if re.match(r'nineteen\b', number, re.IGNORECASE):
         return 19
-    if re.match(r'twenty', number, re.IGNORECASE):
+    if re.match(r'twenty\b', number, re.IGNORECASE):
         return 20
-    if re.match(r'thirty', number, re.IGNORECASE):
+    if re.match(r'thirty\b', number, re.IGNORECASE):
         return 30
-    if re.match(r'forty', number, re.IGNORECASE):
+    if re.match(r'forty\b', number, re.IGNORECASE):
         return 40
-    if re.match(r'fifty', number, re.IGNORECASE):
+    if re.match(r'fifty\b', number, re.IGNORECASE):
         return 50
-    if re.match(r'sixty', number, re.IGNORECASE):
+    if re.match(r'sixty\b', number, re.IGNORECASE):
         return 60
-    if re.match(r'seventy', number, re.IGNORECASE):
+    if re.match(r'seventy\b', number, re.IGNORECASE):
         return 70
-    if re.match(r'eighty', number, re.IGNORECASE):
+    if re.match(r'eighty\b', number, re.IGNORECASE):
         return 80
-    if re.match(r'ninety', number, re.IGNORECASE):
+    if re.match(r'ninety\b', number, re.IGNORECASE):
         return 90
-    if re.match(r'hundred', number, re.IGNORECASE):
+    if re.match(r'hundred\b', number, re.IGNORECASE):
         return 100
-    if re.match(r'thousand', number, re.IGNORECASE):
+    if re.match(r'thousand\b', number, re.IGNORECASE):
       return 1000
+
+    return None
 
 # Convert strings to numbers
 def convert_string_to_number(value):
@@ -557,6 +589,38 @@ def convertTimetoHourMinute(hour, minute, convention):
         hour+=12
 
     return { 'hours': hour, 'minutes': minute }
+
+# Date from words
+def dateFromWords (base_date, n1, month, n2, n3):
+    n1 = str(n1).strip()
+    if n1[-2:] in re_number_end:
+        if hashnum(n1[-2:]):
+            n1 = hashnum(n1[-2:])
+        if len(n1.split()) > 1:
+            num_list = map(lambda s:hashnum(s) if hashnum(s) is not None else 0, n1.split())
+            num_list_a = map(lambda s:hashordinals[s] if s in hashordinals else 0, n1.split())
+            n1 = sum(num_list) + sum(num_list_a)
+        elif n1 in hashordinals:
+            n1 = hashordinals[n1]
+    else:
+        if hashnum(n1) and len(n1.split()) == 1:
+            n1 = hashnum(n1)
+        else:
+            n1 = convert_string_to_number(n1)
+    if n2[-2:] in re_number_end:
+        n2 = n2[:-2]
+    if n3[-2:] in re_number_end:
+        n3 = n3[:-2]
+
+    if hashnum(n2):
+        n2 = str(hashnum(n2))
+    if hashnum(n3):
+        n3 = str(hashnum(n3))
+    day = int(n1)
+    month = hashmonths[month.strip().lower()]
+    year = int(n2 + n3)
+
+    return datetime(year, month, day)
 
 # Date from houndify
 def dateForHoundify (year, month, day, incorrect_day, ordinal):
@@ -722,7 +786,6 @@ def dateFromAdverb(base_date, name):
 # Eg: 20 days from now
 # Doesnt support 20 days from last monday
 def dateFromDuration(base_date, numberAsString, unit, duration, base_time = None):
-    print (numberAsString, unit)
     # Check if query is `2 days before yesterday` or `day before yesterday`
     if base_time != None:
         base_date = dateFromAdverb(base_date, base_time)

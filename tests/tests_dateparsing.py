@@ -147,3 +147,59 @@ class DateTimeParsingTestCases(TestCase):
     self.assertIn(input_text.lower(), parser[0])
     self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '10-02-2017')
     self.assertEqual(len(parser), 1)
+
+    input_text = 'fourteenth april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '14-04-2017')
+
+    input_text = 'fourteen april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '14-04-2017')
+
+    input_text = 'four april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '04-04-2017')
+
+    input_text = 'twenty april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '20-04-2017')
+
+    input_text = 'twenty one april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '21-04-2017')
+
+    input_text = 'twenty first april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '21-04-2017')
+
+    input_text = 'twenty three april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '23-04-2017')
+
+    input_text = 'twenty third april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '23-04-2017')
+
+    input_text = 'twenty third of april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '23-04-2017')
+
+    input_text = '21st of april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '21-04-2017')
+
+    input_text = '21st april twenty seventeen'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '21-04-2017')
+
+    input_text = '21st of april 20 18'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '21-04-2018')
+
+    input_text = '21st of april 2018'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '21-04-2018')
+
+    input_text = 'twenty first of april 20 18'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '21-04-2018')
