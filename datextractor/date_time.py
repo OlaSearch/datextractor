@@ -630,7 +630,10 @@ def dateForHoundify (base_date, year, month, day, incorrect_day, ordinal):
         day = hashordinals[ordinal]
     if incorrect_day and year > 1000:
         year_str = str(year)
-        year = str(incorrect_day) + (year_str[1:] if len(year_str) == 2 else year_str[2:])
+        incorrect_day = str(incorrect_day)
+        if len(incorrect_day) < 2:
+            incorrect_day +='0'
+        year = incorrect_day + (year_str[1:] if len(year_str) == 2 else year_str[2:])
 
     return datetime(int(year) if year else base_date.year, month, day)
 
