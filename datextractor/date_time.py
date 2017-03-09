@@ -81,6 +81,7 @@ regex = [
         (re.VERBOSE | re.IGNORECASE)
         ),
         lambda m, base_date: dateForHoundify(
+                base_date,
                 int(m.group('year') if m.group('year') else base_date.year),
                 hashmonths[m.group('month').strip().lower()],
                 int(m.group('day') if m.group('day') else 1),
@@ -623,14 +624,15 @@ def dateFromWords (base_date, n1, month, n2, n3):
     return datetime(year, month, day)
 
 # Date from houndify
-def dateForHoundify (year, month, day, incorrect_day, ordinal):
+def dateForHoundify (base_date, year, month, day, incorrect_day, ordinal):
     if ordinal is not None and ordinal not in re_number_end:
         ordinal = ordinal.strip()
         day = hashordinals[ordinal]
     if incorrect_day and year > 1000:
         year_str = str(year)
-        year = str(incorrect_day) + year_str[1:]
-    return datetime(int(year), month, day)
+        year = str(incorrect_day) + (year_str[1:] if len(year_str) == 2 else year_str[2:])
+
+    return datetime(int(year) if year else base_date.year, month, day)
 
 # Quarter of a year
 def dateFromQuarter (base_date, ordinal, year):
