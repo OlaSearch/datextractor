@@ -46,9 +46,9 @@ regex = [
             ((%s)\s)?
             (?P<month>%s) # Matches any month name
             (\s)
-            ((?P<number_2>\d+|(%s))\s) # Matches any month name
+            ((?P<number_2>\d{1,2}|(%s))\s) # Matches any month name
             (%s\s)?
-            ((?P<number_3>\d+|(%s))) # Matches any month name
+            ((?P<number_3>\d{1,2}|(%s))) # Matches any month name
             (%s\s)?
         )
         (\b)
@@ -624,7 +624,7 @@ def dateFromWords (base_date, n1, month, n2, n3):
 
 # Date from houndify
 def dateForHoundify (year, month, day, incorrect_day, ordinal):
-    if ordinal is not None:
+    if ordinal is not None and ordinal not in re_number_end:
         ordinal = ordinal.strip()
         day = hashordinals[ordinal]
     if incorrect_day and year > 1000:
