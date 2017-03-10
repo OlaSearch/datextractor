@@ -4,6 +4,10 @@ from datextractor import datetime_parsing
 # text = '<p>10th of Feb 2017</p>'
 # text = '<p>twentyth March twenty 18</p>'
 text = '<p>jan 2018</p>'
+text = '<p>twenty five october</p>'#, 25 october in the day of Monday 12 January 2012</p>'
+# text = '<p>twenty first april twenty seventeen</p>'
+# text = '<p>21st april twenty seventeen</p>'
+# text = '<p>21st of april 20 nineteen</p>'
 # text = '<p>The event is on Monday 12 January 2012</p>'
 # Todo : last 2 months. range
 # text = '<p>The invoice was working on twenty five minutes ago.</p>'

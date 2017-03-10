@@ -260,6 +260,35 @@ regex = [
         r'''
         (\b)
         (
+            ((?P<number>\d+|(%s[-\s]?)+)\s) # Matches any number or string 25 or twenty five
+            (?P<ordinal>%s)? # 1st January 2012
+            (?P<month>%s)
+            ([,\s]\s*(?P<year>%s))
+        )
+        (\b)
+        '''% (numbers, re_separator, month_names, re_year),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: dateFromWordsMonthYear(base_date, m.group('number'), m.group('month'), m.group('year'))
+    ),
+    (re.compile(
+        r'''
+        (\b)
+        (
+            ((?P<number>\d+|(%s[-\s]?)+)\s) # Matches any number or string 25 or twenty five
+            (?P<ordinal>%s)? # 1st January 2012
+            (?P<month>%s)
+        )
+        (\b)
+        '''% (numbers, re_separator, month_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: dateFromWordsMonthYear(base_date, m.group('number'), m.group('month'), base_date.year)
+    ),
+    (re.compile(
+        r'''
+        (\b)
+        (
             (?P<month>%s)
             \s+
             (?P<ordinal_value>\d+)
@@ -513,6 +542,8 @@ def hashnum(number):
         return 4
     if re.match(r'five\b', number, re.IGNORECASE):
         return 5
+    if re.match(r'fifth\b', number, re.IGNORECASE):
+        return 5
     if re.match(r'six\b', number, re.IGNORECASE):
         return 6
     if re.match(r'seven\b', number, re.IGNORECASE):
@@ -564,15 +595,25 @@ def hashnum(number):
 
     return None
 
+def convert_word_to_number (s):
+    if hashnum(s):
+        return hashnum(s)
+    elif s in hashordinals:
+        return hashordinals[s]
+    return 1
+
 # Convert strings to numbers
 def convert_string_to_number(value):
+    # print (value)
+    # print (re.findall(numbers + '\\b', value, re.IGNORECASE))
+    # print (numbers + '\b')
     if value == None:
         return 1
     if isinstance(value, int):
         return value
     if value.isdigit():
         return int(value)
-    num_list = map(lambda s:hashnum(s), re.findall(numbers + '+', value, re.IGNORECASE))
+    num_list = map(lambda s:convert_word_to_number(s), re.findall(numbers + '\\b', value, re.IGNORECASE))
     return sum(num_list)
 
 # Convert time to hour, minute
@@ -594,35 +635,23 @@ def convertTimetoHourMinute(hour, minute, convention):
 
 # Date from words
 def dateFromWords (base_date, n1, month, n2, n3):
-    n1 = str(n1).strip()
-    if n1[-2:] in re_number_end:
-        if hashnum(n1[-2:]):
-            n1 = hashnum(n1[-2:])
-        if len(n1.split()) > 1:
-            num_list = map(lambda s:hashnum(s) if hashnum(s) is not None else 0, n1.split())
-            num_list_a = map(lambda s:hashordinals[s] if s in hashordinals else 0, n1.split())
-            n1 = sum(num_list) + sum(num_list_a)
-        elif n1 in hashordinals:
-            n1 = hashordinals[n1]
-    else:
-        if hashnum(n1) and len(n1.split()) == 1:
-            n1 = hashnum(n1)
-        else:
-            n1 = convert_string_to_number(n1)
-    if n2[-2:] in re_number_end:
-        n2 = n2[:-2]
-    if n3[-2:] in re_number_end:
-        n3 = n3[:-2]
-
-    if hashnum(n2):
-        n2 = str(hashnum(n2))
-    if hashnum(n3):
-        n3 = str(hashnum(n3))
-    day = int(n1)
+    day = convert_string_to_number(n1)
     month = hashmonths[month.strip().lower()]
-    year = int(n2 + n3)
-
+    n2 = convert_string_to_number(n2)
+    n3 = convert_string_to_number(n3)
+    year = int(str(n2) + str(n3)) if n2 and n2 else base_date.year
     return datetime(year, month, day)
+
+def dateFromWords2 (base_date, n,m):
+    print (n, m)
+    return datetime(base_date.year, m, convert_string_to_number(n))
+
+def dateFromWordsMonthYear (base_date, numberAsString, month, year):
+    year = int(year if year else base_date.year)
+    month = int(hashmonths[month.lower()] if month else 1)
+    num = convert_string_to_number(numberAsString)
+    print (numberAsString)
+    return datetime(year, month, num)
 
 # Date from houndify
 def dateForHoundify (base_date, year, month, day, incorrect_day, ordinal):
@@ -912,6 +941,7 @@ hashordinals = {
     'ninth': 9,
     'ten': 10,
     'tenth': 10,
+    'seventeen': 17,
     'last': -1
 }
 
