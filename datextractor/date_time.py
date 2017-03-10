@@ -125,6 +125,7 @@ regex = [
             (?P<month>%s) # Matches any month name
             [-\s] # Space
             ((?P<day>\d{1,2})) # Matches a digit
+            (\b)
             ([\,])?
             (%s)?
             ([\,])?
