@@ -341,7 +341,7 @@ regex = [
         (
             (?P<day>\d{1,2}) # Day, Month
             (%s)?
-            [-\s] # One or more space
+            [-\s]? # One or more space
             (?P<month>%s)
         )
         (\b)
