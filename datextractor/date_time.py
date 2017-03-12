@@ -643,14 +643,12 @@ def dateFromWords (base_date, n1, month, n2, n3):
     return datetime(year, month, day)
 
 def dateFromWords2 (base_date, n,m):
-    print (n, m)
     return datetime(base_date.year, m, convert_string_to_number(n))
 
 def dateFromWordsMonthYear (base_date, numberAsString, month, year):
     year = int(year if year else base_date.year)
     month = int(hashmonths[month.lower()] if month else 1)
     num = convert_string_to_number(numberAsString)
-    print (numberAsString)
     return datetime(year, month, num)
 
 # Date from houndify
