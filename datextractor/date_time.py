@@ -129,7 +129,7 @@ regex = [
             ([\,])?
             (%s)?
             ([\,])?
-            ([-\s](?P<year>%s))? # Year
+            ([-\s](?P<year>%s)) # Year
             ((\s|,\s|\s(%s))?\s*(%s))?
         )
         '''% (day_names, month_names, re_ordinal, re_year, re_separator, re_time),
@@ -276,14 +276,20 @@ regex = [
         (\b)
         (
             ((?P<number>\d+|(%s[-\s]?)+)\s) # Matches any number or string 25 or twenty five
-            (?P<ordinal>%s)? # 1st January 2012
+            (?P<ordinal>%s)? # 27 August 17
             (?P<month>%s)
+            ([,\s]\s*(?P<year>\d{2}))
         )
         (\b)
         '''% (numbers, re_separator, month_names),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: dateFromWordsMonthYear(base_date, m.group('number'), m.group('month'), base_date.year)
+        lambda m, base_date: dateFromWordsMonthYear(
+            base_date,
+            m.group('number'),
+            m.group('month'),
+            m.group('year')
+        )
     ),
     (re.compile(
         r'''
@@ -364,6 +370,20 @@ regex = [
                 m.group('minute'),
                 m.group('convention')
             ))
+    ),
+    (re.compile(
+        r'''
+        (\b)
+        (
+            ((?P<number>\d+|(%s[-\s]?)+)\s) # Matches any number or string 25 or twenty five
+            (?P<ordinal>%s)? # 1st January
+            (?P<month>%s)
+        )
+        (\b)
+        '''% (numbers, re_separator, month_names),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: dateFromWordsMonthYear(base_date, m.group('number'), m.group('month'), base_date.year)
     ),
     (re.compile(
         r'''
@@ -645,8 +665,13 @@ def dateFromWords (base_date, n1, month, n2, n3):
 def dateFromWords2 (base_date, n,m):
     return datetime(base_date.year, m, convert_string_to_number(n))
 
+def normalize_year (yr, base_date):
+    if yr < 100:
+        yr = int(str(base_date.year)[0:2] + str(yr))
+    return yr
+
 def dateFromWordsMonthYear (base_date, numberAsString, month, year):
-    year = int(year if year else base_date.year)
+    year = normalize_year(int(year if year else base_date.year), base_date)
     month = int(hashmonths[month.lower()] if month else 1)
     num = convert_string_to_number(numberAsString)
     return datetime(year, month, num)
@@ -955,6 +980,8 @@ def datetime_parsing (text, base_date = datetime.now()):
     for r, fn in regex:
         for m in r.finditer(text):
             matches.append((m.group(), fn(m, base_date), m.span()))
+
+    # print (matches)
 
     # Wrap the matched text with TAG element to prevent nested selections
     for match, value, spans in matches:
