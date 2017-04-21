@@ -1,4 +1,4 @@
-# Date extractor for python
+# Date and Number extractor for python
 
 ### For python 2+ or 3. No external dependencies
 
