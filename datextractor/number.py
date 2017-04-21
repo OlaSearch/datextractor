@@ -11,7 +11,17 @@ hash_units = {
   "six": 6,
   "seven": 7,
   "eight": 8,
-  "nine": 9
+  "nine": 9,
+  "ten": 10,
+  "eleven": 11,
+  "twelve": 12,
+  "thirteen": 13,
+  "fourteen": 14,
+  "fifteen": 15,
+  "sixteen": 16,
+  "seventeen": 17,
+  "eighteen": 18,
+  "nineteen": 19
 }
 
 hash_tens = {
@@ -32,6 +42,7 @@ hash_scales = {
   "million": 1000000
 }
 
+re_mods = 'over|under|below|above'
 re_units = '|'.join(hash_units.keys())
 re_tens = '|'.join(hash_tens.keys())
 re_scales = '|'.join(hash_scales.keys())
@@ -43,15 +54,16 @@ regex = [
         r'''
         (\b)
         (
+          (?P<mods>(%s)\s)?
           (?P<units>%s)
           (\s)
           (?P<scales>%s)
         )
         (\b)
-        '''%(re_units, re_scales),
+        '''%(re_mods, re_units, re_scales),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m: convert_units_scales(m.group('units'), m.group('scales'))
+        lambda m: convert_units_scales(m.group('units'), m.group('scales'), m.group('mods'))
     ),
     # Captures
     # Ninety nine, fourty eight
@@ -59,15 +71,16 @@ regex = [
         r'''
         (\b)
         (
+          (?P<mods>(%s)\s)?
           (?P<tens>%s)
           (\s)
           (?P<units>%s)
         )
         (\b)
-        '''%(re_tens, re_units),
+        '''%(re_mods, re_tens, re_units),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m: convert_hash_tens(m.group('tens'), m.group('units'))
+        lambda m: convert_hash_tens(m.group('tens'), m.group('units'), m.group('mods'))
     ),
     # Captures
     # Ninety
@@ -75,13 +88,14 @@ regex = [
         r'''
         (\b)
         (
+          (?P<mods>(%s)\s)?
           (?P<tens>%s)
         )
         (\b)
-        '''%(re_tens),
+        '''%(re_mods, re_tens),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m: convert_hash_tens(m.group('tens'), None)
+        lambda m: convert_hash_tens(m.group('tens'), None, m.group('mods'))
     ),
     # Captures
     # one, two
@@ -89,13 +103,14 @@ regex = [
         r'''
         (\b)
         (
+          (?P<mods>(%s)\s)?
           (?P<units>%s)
         )
         (\b)
-        '''%(re_units),
+        '''%(re_mods, re_units),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m: convert_hash_tens(None, m.group('units'))
+        lambda m: convert_hash_tens(None, m.group('units'), m.group('mods'))
     ),
     # Captures
     # hundred
@@ -103,13 +118,14 @@ regex = [
         r'''
         (\b)
         (
+          (?P<mods>(%s)\s)?
           (?P<scales>%s)
         )
         (\b)
-        '''%(re_scales),
+        '''%(re_mods, re_scales),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m: convert_units_scales(None, m.group('scales'))
+        lambda m: convert_units_scales(None, m.group('scales'), m.group('mods'))
     ),
     # Captures all digits
     # 45
@@ -117,29 +133,52 @@ regex = [
         r'''
         (\b)
         (
-          (?P<digits>\d+\.?\d+?)
+          (?P<mods>(%s)\s)?
+          (?P<digits>\d*\.?\d+?)
         )
         (\b)
-        ''',
+        '''%(re_mods),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m: float(m.group('digits'))
+        lambda m: convert_to_pure_number(m.group('digits'), m.group('mods'))
     ),
 ]
 
-def convert_hash_tens (tens = None, units = None):
-  return (
+def convert_hash_tens (tens = None, units = None, mods = None):
+  value = (
     hash_tens[tens] if tens is not None else 0
   )  + (
     hash_units[units] if units is not None else 0
   )
 
-def convert_units_scales (units = None, scales = None):
-  return (
+  if mods is not None:
+    value += get_mods_value(mods)
+  return value
+
+def convert_units_scales (units = None, scales = None, mods = None):
+  value =  (
     hash_units[units] if units is not None else 1
   )  * (
     hash_scales[scales] if scales is not None else 0
   )
+
+  if mods is not None:
+    value += get_mods_value(mods)
+  return value
+
+def convert_to_pure_number (num, mods = None):
+  value = float(num)
+  if mods is not None:
+    value += get_mods_value(mods)
+  return value
+
+
+def get_mods_value (mod):
+  mod = mod.strip()
+  if mod == 'above' or mod == 'over':
+    return 1
+  if mod == 'below' or mod == 'under':
+    return -1
 
 # Parses date
 def number_parsing (text):
@@ -154,7 +193,6 @@ def number_parsing (text):
         for m in r.finditer(text):
             matches.append((m.group(), fn(m), m.span()))
 
-    # print (matches)
 
     # Wrap the matched text with TAG element to prevent nested selections
     for match, value, spans in matches:

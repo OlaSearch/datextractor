@@ -1,5 +1,5 @@
 from datextractor import number_parsing
 
-text = 'I want fifty five hot dogs for two hundred dollars'
+text = 'I have 2 kids'
 
 print (number_parsing(text))
