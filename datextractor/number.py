@@ -3,16 +3,27 @@ import re
 
 hash_units = {
   "zero": 0,
-  "one": 1,
-  "two": 2,
-  "three": 3,
-  "four": 4,
-  "five": 5,
-  "six": 6,
-  "seven": 7,
-  "eight": 8,
-  "nine": 9,
-  "ten": 10,
+  'first': 1,
+  'one': 1,
+  'second' : 2,
+  'two' : 2,
+  'third': 3,
+  'three': 3,
+  'fourth': 4,
+  'four': 4,
+  'forth': 4,
+  'five': 5,
+  'fifth': 5,
+  'six': 6,
+  'sixth': 6,
+  'seven': 7,
+  'seventh': 7,
+  'eight': 8,
+  'eighth': 8,
+  'nine': 9,
+  'ninth': 9,
+  'ten': 10,
+  'tenth': 10,
   "eleven": 11,
   "twelve": 12,
   "thirteen": 13,
@@ -42,7 +53,8 @@ hash_scales = {
   "million": 1000000
 }
 
-re_mods = 'over|under|below|above'
+re_postfix = 'nd|th'
+re_mods = 'over|under|below|above|more\sthan'
 re_units = '|'.join(hash_units.keys())
 re_tens = '|'.join(hash_tens.keys())
 re_scales = '|'.join(hash_scales.keys())
@@ -135,9 +147,10 @@ regex = [
         (
           (?P<mods>(%s)\s)?
           (?P<digits>\d*\.?\d+?)
+          (%s)?
         )
         (\b)
-        '''%(re_mods),
+        '''%(re_mods, re_postfix),
         (re.VERBOSE | re.IGNORECASE)
         ),
         lambda m: convert_to_pure_number(m.group('digits'), m.group('mods'))
@@ -175,9 +188,9 @@ def convert_to_pure_number (num, mods = None):
 
 def get_mods_value (mod):
   mod = mod.strip()
-  if mod == 'above' or mod == 'over':
+  if mod == 'above' or mod == 'over' or mod == 'more than':
     return 1
-  if mod == 'below' or mod == 'under':
+  if mod == 'below' or mod == 'under' or mod == 'less than':
     return -1
 
 # Parses date
