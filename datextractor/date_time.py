@@ -979,7 +979,10 @@ def datetime_parsing (text, base_date = datetime.now()):
     # Find the position in the string
     for r, fn in regex:
         for m in r.finditer(text):
-            matches.append((m.group(), fn(m, base_date), m.span()))
+            try:
+                matches.append((m.group(), fn(m, base_date), m.span()))
+            except ValueError:
+                continue
 
     # print (matches)
 
