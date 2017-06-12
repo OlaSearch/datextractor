@@ -54,7 +54,7 @@ hash_scales = {
 }
 
 re_postfix = 'nd|th'
-re_mods = 'over|under|below|above|more\sthan'
+re_mods = 'over|under|below|above'
 re_units = '|'.join(hash_units.keys())
 re_tens = '|'.join(hash_tens.keys())
 re_scales = '|'.join(hash_scales.keys())
