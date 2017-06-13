@@ -85,7 +85,7 @@ regex = [
         (
           (?P<mods>(%s)\s)?
           (?P<tens>%s)
-          (\s)
+          (\s|\-)
           (?P<units>%s)
         )
         (\b)
