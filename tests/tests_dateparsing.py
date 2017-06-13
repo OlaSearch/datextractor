@@ -48,11 +48,11 @@ class DateTimeParsingTestCases(TestCase):
     self.assertEqual(parser[0][1].strftime('%d-%m-%y'), dateFromDuration(base_date, 10, 'days', 'later').strftime('%d-%m-%y'))
     self.assertEqual(len(parser), 1)
 
-    input_text = '2010'
-    parser = datetime_parsing(input_text)
-    self.assertIn(input_text.lower(), parser[0])
-    self.assertEqual(parser[0][1].strftime('%Y'), input_text)
-    self.assertEqual(len(parser), 1)
+    # input_text = '2010'
+    # parser = datetime_parsing(input_text)
+    # self.assertIn(input_text.lower(), parser[0])
+    # self.assertEqual(parser[0][1].strftime('%Y'), input_text)
+    # self.assertEqual(len(parser), 1)
 
     input_text = 'today'
     parser = datetime_parsing(input_text)

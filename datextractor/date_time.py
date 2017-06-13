@@ -463,6 +463,25 @@ regex = [
     (re.compile(
         r'''
         (\b)
+        (
+            (?P<day>\d{1,2}) # MM/DD or MM/DD/YYYY
+            /
+            ((?P<month>\d{1,2}))
+            (/(?P<year>%s))?
+        )
+        (\b)
+        '''% (re_year),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: datetime(
+                int(m.group('year') if m.group('year') else base_date.year),
+                int(m.group('month').strip()),
+                int(m.group('day'))
+            )
+    ),
+    (re.compile(
+        r'''
+        (\b)
         (?P<adverb>%s) # today, yesterday, tomorrow, tonight
         ((\s|,\s|\s(%s))?\s*(%s))?
         '''% (day_nearest_names, re_separator, re_time),
