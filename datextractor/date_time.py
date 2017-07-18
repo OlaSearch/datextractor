@@ -33,6 +33,8 @@ all_numbers = numbers + '|first|second|third|forth|fourth|fifth|sixth|seventh|ei
 
 # A list tuple of regular expressions / parser fn to match
 # The order of the match in this list matters, So always start with the widest match and narrow it down
+def hello ():
+    print ('called')
 regex = [
     # Houndify bug fix
     (re.compile(
@@ -63,32 +65,32 @@ regex = [
             m.group('number_3')
         )
     ),
-    (re.compile(
-        r'''
-        (\b)
-        (
-            (?P<day>\d{1,2})? # Matches a digit
-            (?P<ordinal>%s)?
-            (\s)
-            (?P<month>%s) # Matches any month name
-            (\s)
-            (?P<day_error>\d{1,2})
-            (\s+)?
-            (?P<year>\d{4})
-        )
-        (\b)
-        '''%(re_ordinal, month_names),
-        (re.VERBOSE | re.IGNORECASE)
-        ),
-        lambda m, base_date: dateForHoundify(
-                base_date,
-                int(m.group('year') if m.group('year') else base_date.year),
-                hashmonths[m.group('month').strip().lower()],
-                int(m.group('day') if m.group('day') else 1),
-                int(m.group('day_error') if m.group('day_error') else 1),
-                m.group('ordinal'),
-            )
-    ),
+    # (re.compile(
+    #     r'''
+    #     (\b)
+    #     (
+    #         (?P<day>\d{1,2})? # Matches a digit
+    #         (?P<ordinal>%s)?
+    #         (\s)
+    #         (?P<month>%s) # Matches any month name
+    #         (\s)
+    #         (?P<day_error>\d{1,2})
+    #         (\s+)?
+    #         (?P<year>\d{4})
+    #     )
+    #     (\b)
+    #     '''%(re_ordinal, month_names),
+    #     (re.VERBOSE | re.IGNORECASE)
+    #     ),
+    #     lambda m, base_date: dateForHoundify(
+    #             base_date,
+    #             int(m.group('year') if m.group('year') else base_date.year),
+    #             hashmonths[m.group('month').strip().lower()],
+    #             int(m.group('day') if m.group('day') else 1),
+    #             int(m.group('day_error') if m.group('day_error') else 1),
+    #             m.group('ordinal'),
+    #         )
+    # ),
     (re.compile(
         r'''
         (\b)
