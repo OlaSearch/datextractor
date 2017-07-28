@@ -203,3 +203,13 @@ class DateTimeParsingTestCases(TestCase):
     input_text = 'twenty first of april 20 18'
     parser = datetime_parsing(input_text)
     self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '21-04-2018')
+
+    input_text = '2012-2014'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(isinstance(parser[0][1], list), True)
+    self.assertEqual(parser[0][1][0].strftime('%d-%m-%Y'), '01-01-2012')
+
+    input_text = '2014-2012'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(isinstance(parser[0][1], list), True)
+    self.assertEqual(parser[0][1][0].strftime('%d-%m-%Y'), '01-01-2012')

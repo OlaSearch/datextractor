@@ -65,32 +65,6 @@ regex = [
             m.group('number_3')
         )
     ),
-    # (re.compile(
-    #     r'''
-    #     (\b)
-    #     (
-    #         (?P<day>\d{1,2})? # Matches a digit
-    #         (?P<ordinal>%s)?
-    #         (\s)
-    #         (?P<month>%s) # Matches any month name
-    #         (\s)
-    #         (?P<day_error>\d{1,2})
-    #         (\s+)?
-    #         (?P<year>\d{4})
-    #     )
-    #     (\b)
-    #     '''%(re_ordinal, month_names),
-    #     (re.VERBOSE | re.IGNORECASE)
-    #     ),
-    #     lambda m, base_date: dateForHoundify(
-    #             base_date,
-    #             int(m.group('year') if m.group('year') else base_date.year),
-    #             hashmonths[m.group('month').strip().lower()],
-    #             int(m.group('day') if m.group('day') else 1),
-    #             int(m.group('day_error') if m.group('day_error') else 1),
-    #             m.group('ordinal'),
-    #         )
-    # ),
     (re.compile(
         r'''
         (\b)
@@ -484,6 +458,20 @@ regex = [
     (re.compile(
         r'''
         (\b)
+        (
+            (?P<year_start>%s)
+            (-)
+            (?P<year_end>%s)
+        )
+        (\b)
+        '''% (re_year, re_year),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: dateYearRange(base_date, m.group('year_start'), m.group('year_end'))
+    ),
+    (re.compile(
+        r'''
+        (\b)
         (?P<adverb>%s) # today, yesterday, tomorrow, tonight
         ((\s|,\s|\s(%s))?\s*(%s))?
         '''% (day_nearest_names, re_separator, re_time),
@@ -697,20 +685,6 @@ def dateFromWordsMonthYear (base_date, numberAsString, month, year):
     num = convert_string_to_number(numberAsString)
     return datetime(year, month, num)
 
-# Date from houndify
-def dateForHoundify (base_date, year, month, day, incorrect_day, ordinal):
-    if ordinal is not None and ordinal not in re_number_end:
-        ordinal = ordinal.strip()
-        day = hashordinals[ordinal]
-    if incorrect_day and year > 1000:
-        year_str = str(year)
-        incorrect_day = str(incorrect_day)
-        if len(incorrect_day) < 2:
-            incorrect_day +='0'
-        year = incorrect_day + (year_str[1:] if len(year_str) == 2 else year_str[2:])
-
-    return datetime(int(year) if year else base_date.year, month, day)
-
 # Quarter of a year
 def dateFromQuarter (base_date, ordinal, year):
     interval = 3
@@ -860,6 +834,19 @@ def dateFromAdverb(base_date, name):
         return d - timedelta(days=1)
     elif name == 'tomorrow' or name == 'tom':
         return d + timedelta(days=1)
+
+def dateYearRange(base_date, year_start, year_end):
+    values = []
+    year_start = int(year_start)
+    year_end = int(year_end)
+    if year_start > year_end:
+        tmp = year_start
+        year_start = year_end
+        year_end = tmp
+    for i in range(year_start, year_end + 1):
+        values.append(datetime(i, 1, 1))
+    return values
+
 
 # Find dates from duration
 # Eg: 20 days from now

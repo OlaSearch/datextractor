@@ -8,6 +8,7 @@ text = '<p>27 August 17</p>'#, 25 october in the day of Monday 12 January 2012</
 text = 'next month'
 text = '25/03/1980'
 text = 'my helper is born on july 23 1994, can i hire her'
+text = 'gdp 2017-2012'
 # text = '<p>twenty first april twenty seventeen</p>'
 # text = '<p>21st april twenty seventeen</p>'
 # text = '<p>21st of april 20 nineteen</p>'
