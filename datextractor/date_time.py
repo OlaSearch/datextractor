@@ -24,7 +24,7 @@ numbers = "(^a(?=\s)|one|two|three|four|five|six|seven|eight|nine|ten| \
 re_dmy = '(' + "|".join(day_variations + minute_variations + year_variations + week_variations + month_variations) + ')'
 re_duration = '(before|after|earlier|later|ago|from\snow)'
 re_year = "(17|18|19|20)\d{2}|^(17|18|19|20)\d{2}"
-re_timeframe = 'current|this|coming|next|following|previous|last|end\sof\sthe'
+re_timeframe = 'current|this|coming|next|following|previous|last|end\sof\sthe|since'
 re_ordinal = 'st|nd|rd|th|first|second|third|fourth|fourth|' + re_timeframe
 re_number_end = ['st', 'nd', 'rd', 'th']
 re_time = '(?P<hour>\d{1,2})(\:(?P<minute>\d{1,2})|(?P<convention>am|pm))'
@@ -472,6 +472,25 @@ regex = [
     (re.compile(
         r'''
         (\b)
+        (
+            (?P<duration>%s) # before, after, earlier, later, ago, from now
+            \s
+            ((?P<year>%s)|(?P<day>\d{1,2})) # MM/DD or MM/DD/YYYY
+        )
+        (\b)
+        '''% (re_timeframe, re_year),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: dateFromDurationDigit(
+                base_date,
+                m.group('duration'),
+                m.group('year'),
+                m.group('day')
+            )
+    ),
+    (re.compile(
+        r'''
+        (\b)
         (?P<adverb>%s) # today, yesterday, tomorrow, tonight
         ((\s|,\s|\s(%s))?\s*(%s))?
         '''% (day_nearest_names, re_separator, re_time),
@@ -499,16 +518,16 @@ regex = [
             hashweekdays[m.group('named_day').lower()]
         )
     ),
-    # (re.compile(
-    #     r'''
-    #     (\b)
-    #     (?P<year>%s) # Year
-    #     (\b)
-    #     '''% (re_year),
-    #     (re.VERBOSE | re.IGNORECASE)
-    #     ),
-    #     lambda m, base_date: datetime(int(m.group('year')), 1, 1)
-    # ),
+    (re.compile(
+        r'''
+        (\b)
+        (?P<year>%s) # Year
+        (\b)
+        '''% (re_year),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: datetime(int(m.group('year')), 1, 1)
+    ),
     (re.compile(
         r'''
         (\b)
@@ -847,11 +866,35 @@ def dateYearRange(base_date, year_start, year_end):
         values.append(datetime(i, 1, 1))
     return values
 
+def dateFromDurationDigit(base_date, duration, year, day):
+    values = []
+    if day is None:
+        # Year
+        year = int(year)
+        current_year = base_date.year
+        if duration == 'since':
+            if year > current_year:
+                year = current_year
+            for i in range(year, current_year + 1):
+                values.append(datetime(i, 1, 1))
+            return values
+        return datetime(year, base_date.month, base_date.day)
+
+    if year is None:
+        # Day
+        day = int(day)
+        if duration == 'since':
+            return datetime(base_date.year, base_date.month, day)
+        if duration == 'last':
+            return datetime(base_date.year, base_date.month, day)
+        return datetime(base_date.year, base_date.month, day)
+    return values
 
 # Find dates from duration
 # Eg: 20 days from now
 # Doesnt support 20 days from last monday
 def dateFromDuration(base_date, numberAsString, unit, duration, base_time = None):
+    print ('called dateFromDuration')
     # Check if query is `2 days before yesterday` or `day before yesterday`
     if base_time != None:
         base_date = dateFromAdverb(base_date, base_time)
