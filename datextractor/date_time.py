@@ -33,8 +33,6 @@ all_numbers = numbers + '|first|second|third|forth|fourth|fifth|sixth|seventh|ei
 
 # A list tuple of regular expressions / parser fn to match
 # The order of the match in this list matters, So always start with the widest match and narrow it down
-def hello ():
-    print ('called')
 regex = [
     # Houndify bug fix
     (re.compile(

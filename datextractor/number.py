@@ -181,6 +181,8 @@ def convert_units_scales (units = None, scales = None, mods = None):
 
 def convert_to_pure_number (num, mods = None):
   value = float(num)
+  if value.is_integer():
+    value = int(value)
   if mods is not None:
     value += get_mods_value(mods)
   return value
