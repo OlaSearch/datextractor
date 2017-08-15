@@ -53,7 +53,7 @@ hash_scales = {
   "million": 1000000
 }
 
-re_postfix = 'nd|th'
+re_postfix = 'nd|th|rd'
 re_mods = 'over|under|below|above'
 re_units = '|'.join(hash_units.keys())
 re_tens = '|'.join(hash_tens.keys())
