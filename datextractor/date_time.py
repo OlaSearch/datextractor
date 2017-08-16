@@ -516,16 +516,17 @@ regex = [
             hashweekdays[m.group('named_day').lower()]
         )
     ),
-    (re.compile(
-        r'''
-        (\b)
-        (?P<year>%s) # Year
-        (\b)
-        '''% (re_year),
-        (re.VERBOSE | re.IGNORECASE)
-        ),
-        lambda m, base_date: datetime(int(m.group('year')), 1, 1)
-    ),
+    # Disable year
+    # (re.compile(
+    #     r'''
+    #     (\b)
+    #     (?P<year>%s) # Year
+    #     (\b)
+    #     '''% (re_year),
+    #     (re.VERBOSE | re.IGNORECASE)
+    #     ),
+    #     lambda m, base_date: datetime(int(m.group('year')), 1, 1)
+    # ),
     (re.compile(
         r'''
         (\b)
