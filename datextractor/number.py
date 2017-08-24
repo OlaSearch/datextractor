@@ -139,6 +139,25 @@ regex = [
         ),
         lambda m: convert_units_scales(None, m.group('scales'), m.group('mods'))
     ),
+    # Captures ranges
+    # 45-60
+    (re.compile(
+        r'''
+        (\b)
+        (
+          (?P<mods>(%s)\s)?
+          (?P<digits_start>\d*\.?\d+?)
+          (\s)?
+          (-)
+          (\s)?
+          (?P<digits_end>\d*\.?\d+?)
+        )
+        (\b)
+        '''%(re_mods),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m: convert_to_range(m.group('digits_start'), m.group('digits_end'))
+    ),
     # Captures all digits
     # 45
     (re.compile(
@@ -180,12 +199,21 @@ def convert_units_scales (units = None, scales = None, mods = None):
   return value
 
 def convert_to_pure_number (num, mods = None):
-  value = float(num)
-  if value.is_integer():
-    value = int(value)
+  value = normalize_int_float(float(num))
+
   if mods is not None:
     value += get_mods_value(mods)
   return value
+
+def normalize_int_float (value):
+  if value.is_integer():
+    value = int(value)
+  return value
+
+def convert_to_range (start, end):
+  start = normalize_int_float(float(start))
+  end = normalize_int_float(float(end))
+  return [start, end]
 
 
 def get_mods_value (mod):
