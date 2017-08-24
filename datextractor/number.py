@@ -148,7 +148,7 @@ regex = [
           (?P<mods>(%s)\s)?
           (?P<digits_start>\d*\.?\d+?)
           (\s)?
-          (-)
+          (-|to)
           (\s)?
           (?P<digits_end>\d*\.?\d+?)
         )
