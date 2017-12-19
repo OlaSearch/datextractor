@@ -304,7 +304,7 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            )), m.group('dmy'))
+            )), normalizeUnit(m.group('dmy')))
     ),
     (re.compile(
         r'''
@@ -848,7 +848,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
     elif dow in month_variations:
         measurement_unit = 'month'
         if time == 'this' or time == 'current':
-            return datetime(d.year, d.month, d.day)
+            return (datetime(d.year, d.month, d.day), measurement_unit)
         elif time == 'last' or time == 'previous':
             if ordinal > 1:
                 values = []
@@ -902,7 +902,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
                     values.append(d + timedelta(days=ordinal))
                     ordinal = ordinal - 1
                 return (values, measurement_unit)
-            return d + timedelta(days=1)
+            return (d + timedelta(days=1), measurement_unit)
         elif time == 'end of the':
             return (datetime(d.year, d.month, d.day, 23, 59, 59), measurement_unit)
 
