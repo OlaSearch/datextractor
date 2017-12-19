@@ -41,12 +41,14 @@ class DateTimeParsingTestCases(TestCase):
     self.assertIn(input_text.lower(), parser[0])
     self.assertEqual(parser[0][1].strftime('%d-%m-%y'), dateFromDuration(base_date, 25, 'minutes', 'from now').strftime('%d-%m-%y'))
     self.assertEqual(len(parser), 1)
+    self.assertEqual(parser[0][3], 'minute')
 
     input_text = '10 days later'
     parser = datetime_parsing(input_text)
     self.assertIn(input_text.lower(), parser[0])
     self.assertEqual(parser[0][1].strftime('%d-%m-%y'), dateFromDuration(base_date, 10, 'days', 'later').strftime('%d-%m-%y'))
     self.assertEqual(len(parser), 1)
+    self.assertEqual(parser[0][3], 'day')
 
     # input_text = '2010'
     # parser = datetime_parsing(input_text)
@@ -59,12 +61,14 @@ class DateTimeParsingTestCases(TestCase):
     self.assertIn(input_text.lower(), parser[0])
     self.assertEqual(parser[0][1].strftime('%d'), datetime.today().strftime('%d'))
     self.assertEqual(len(parser), 1)
+    self.assertEqual(parser[0][3], 'day')
 
     input_text = 'tomorrow'
     parser = datetime_parsing(input_text)
     self.assertIn(input_text, parser[0])
     self.assertEqual(parser[0][1].strftime('%d'), (datetime.today() + timedelta(days=1)).strftime('%d'))
     self.assertEqual(len(parser), 1)
+    self.assertEqual(parser[0][3], 'day')
 
     input_text = 'yesterday'
     parser = datetime_parsing(input_text)
@@ -83,18 +87,21 @@ class DateTimeParsingTestCases(TestCase):
     self.assertIn(input_text.lower(), parser[0])
     self.assertEqual(parser[0][1].strftime('%d'), (datetime.today() - timedelta(days=1)).strftime('%d'))
     self.assertEqual(len(parser), 1)
+    self.assertEqual(parser[0][3], 'day')
 
     input_text = 'day before tomorrow'
     parser = datetime_parsing(input_text)
     self.assertIn(input_text.lower(), parser[0])
     self.assertEqual(parser[0][1].strftime('%d'), (datetime.today() - timedelta(days=0)).strftime('%d'))
     self.assertEqual(len(parser), 1)
+    self.assertEqual(parser[0][3], 'day')
 
     input_text = '2 days before'
     parser = datetime_parsing(input_text)
     self.assertIn(input_text.lower(), parser[0])
     self.assertEqual(parser[0][1].strftime('%d'), (datetime.today() - timedelta(days=2)).strftime('%d'))
     self.assertEqual(len(parser), 1)
+    self.assertEqual(parser[0][3], 'day')
 
     input_text = 'Monday and Friday'
     parser = datetime_parsing(input_text)
@@ -203,13 +210,34 @@ class DateTimeParsingTestCases(TestCase):
     input_text = 'twenty first of april 20 18'
     parser = datetime_parsing(input_text)
     self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '21-04-2018')
+    self.assertEqual(parser[0][3], 'day')
 
     input_text = '2012-2014'
     parser = datetime_parsing(input_text)
     self.assertEqual(isinstance(parser[0][1], list), True)
     self.assertEqual(parser[0][1][0].strftime('%d-%m-%Y'), '01-01-2012')
+    self.assertEqual(parser[0][3], 'year')
 
     input_text = '2014-2012'
     parser = datetime_parsing(input_text)
     self.assertEqual(isinstance(parser[0][1], list), True)
     self.assertEqual(parser[0][1][0].strftime('%d-%m-%Y'), '01-01-2012')
+    self.assertEqual(parser[0][3], 'year')
+
+    input_text = 'last 3 months'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(isinstance(parser[0][1], list), True)
+    self.assertEqual(parser[0][3], 'month')
+
+    input_text = 'last 3 weeks'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][3], 'week')
+
+    input_text = 'last 3 days'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(parser[0][3], 'day')
+
+    input_text = 'last december'
+    parser = datetime_parsing(input_text)
+    print (parser)
+    self.assertEqual(parser[0][3], 'month')

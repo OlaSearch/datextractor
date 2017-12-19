@@ -27,7 +27,7 @@ re_year = "(17|18|19|20)\d{2}|^(17|18|19|20)\d{2}"
 re_timeframe = 'current|this|coming|next|following|previous|last|end\sof\sthe|since'
 re_ordinal = 'st|nd|rd|th|first|second|third|fourth|fourth|' + re_timeframe
 re_number_end = ['st', 'nd', 'rd', 'th']
-re_time = '(?P<hour>\d{1,2})(\:(?P<minute>\d{1,2})|(?P<convention>am|pm))'
+re_time = '(?P<hour>\d{1,2})(\s?)(\:(?P<minute>\d{1,2})|(?P<convention>am|pm))'
 re_separator = 'of|at|on'
 all_numbers = numbers + '|first|second|third|forth|fourth|fifth|sixth|seventh|eighth|ninth|tenth'
 
@@ -81,7 +81,7 @@ regex = [
         '''% (day_names, re_ordinal, re_separator, month_names, re_year, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
                 int(m.group('year') if m.group('year') else base_date.year),
                 hashmonths[m.group('month').strip().lower()],
                 int(m.group('day') if m.group('day') else 1),
@@ -89,7 +89,7 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            ))
+            )), 'day')
     ),
     (re.compile(
         r'''
@@ -109,7 +109,7 @@ regex = [
         '''% (day_names, month_names, re_ordinal, re_year, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
                 int(m.group('year') if m.group('year') else base_date.year),
                 hashmonths[m.group('month').strip().lower()],
                 int(m.group('day') if m.group('day') else 1)
@@ -117,7 +117,7 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            ))
+            )), 'day')
     ),
     (re.compile(
         r'''
@@ -135,7 +135,7 @@ regex = [
         '''% (month_names, re_ordinal, re_year, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
                 int(m.group('year') if m.group('year') else base_date.year),
                 hashmonths[m.group('month').strip().lower()],
                 int(m.group('day') if m.group('day') else 1),
@@ -143,7 +143,7 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            ))
+            )), 'day')
     ),
     (re.compile(
         r'''
@@ -159,7 +159,7 @@ regex = [
         '''% (numbers, re_dmy, re_duration, day_nearest_names, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: dateFromDuration(
+        lambda m, base_date: (dateFromDuration(
             base_date,
             m.group('number'),
             m.group('unit').lower(),
@@ -169,7 +169,7 @@ regex = [
             m.group('hour'),
             m.group('minute'),
             m.group('convention')
-        ))
+        )), normalizeUnit(m.group('unit').lower()))
     ),
     (re.compile(
         r'''
@@ -183,12 +183,12 @@ regex = [
         '''% (re_duration, numbers, re_dmy),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: dateFromDuration(
+        lambda m, base_date: (dateFromDuration(
             base_date,
             m.group('number'),
             m.group('unit').lower(),
             m.group('duration').lower()
-        )
+        ), normalizeUnit(m.group('unit').lower()))
     ),
     (re.compile(
         r'''
@@ -224,11 +224,11 @@ regex = [
         '''% (re_ordinal, re_separator, month_names, re_year),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
                 int(m.group('year') if m.group('year') else base_date.year),
                 int(hashmonths[m.group('month').lower()] if m.group('month') else 1),
                 int(m.group('ordinal_value') if m.group('ordinal_value') else 1),
-            )
+            ), 'day')
     ),
     (re.compile(
         r'''
@@ -296,7 +296,7 @@ regex = [
         '''% (re_timeframe, re_dmy, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE),
         ),
-        lambda m, base_date: dateFromRelativeWeekYear(
+        lambda m, base_date: (dateFromRelativeWeekYear(
             base_date,
             m.group('time'),
             m.group('dmy')
@@ -304,7 +304,7 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            ))
+            )), m.group('dmy'))
     ),
     (re.compile(
         r'''
@@ -335,7 +335,7 @@ regex = [
         '''% (re_timeframe, day_names, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE),
         ),
-        lambda m, base_date: dateFromRelativeDay(
+        lambda m, base_date: (dateFromRelativeDay(
             base_date,
             m.group('time'),
             m.group('dow')
@@ -343,7 +343,28 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            ))
+            )), 'day')
+    ),
+    (re.compile(
+        r'''
+        (\b)
+        (?P<time>%s) # this, next, following, previous, last (last december)
+        \s+
+        (?P<month>%s) # Month
+        ((\s|,\s|\s(%s))?\s*(%s))?
+        (\b)
+        '''% (re_timeframe, month_names, re_separator, re_time),
+        (re.VERBOSE | re.IGNORECASE),
+        ),
+        lambda m, base_date: (dateFromRelativeMonth(
+            base_date,
+            m.group('time'),
+            m.group('month')
+        ) + timedelta(**convertTimetoHourMinute(
+                m.group('hour'),
+                m.group('minute'),
+                m.group('convention')
+            )), 'month')
     ),
     (re.compile(
         r'''
@@ -514,14 +535,14 @@ regex = [
         '''% (day_nearest_names, re_separator, re_time),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: dateFromAdverb(
+        lambda m, base_date: (dateFromAdverb(
             base_date,
             m.group('adverb')
         ) + timedelta(**convertTimetoHourMinute(
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            ))
+            )), 'day')
     ),
     (re.compile(
         r'''
@@ -545,7 +566,7 @@ regex = [
     #     '''% (re_year),
     #     (re.VERBOSE | re.IGNORECASE)
     #     ),
-    #     lambda m, base_date: datetime(int(m.group('year')), 1, 1)
+    #     lambda m, base_date: (datetime(int(m.group('year')), 1, 1), 'year')
     # ),
     (re.compile(
         r'''
@@ -555,11 +576,11 @@ regex = [
         '''% (month_names_long),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
             base_date.year,
             hashmonths[m.group('month').lower()],
             1
-        )
+        ), 'month')
     ),
     (re.compile(
         r'''
@@ -567,7 +588,7 @@ regex = [
         '''% (re_time),
         (re.VERBOSE | re.IGNORECASE),
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
             base_date.year,
             base_date.month,
             base_date.day
@@ -575,7 +596,7 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            ))
+            )), 'hour')
     ),
     (re.compile(
         r'''
@@ -587,12 +608,12 @@ regex = [
         '''% ('|'.join(hour_variations)),
         (re.VERBOSE | re.IGNORECASE),
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
             base_date.year,
             base_date.month,
             base_date.day,
             int(m.group('hour'))
-            )
+            ), 'hour')
     )
 ]
 
@@ -726,16 +747,17 @@ def dateFromWordsMonthYear (base_date, numberAsString, month, year):
 # Quarter of a year
 def dateFromQuarter (base_date, ordinal, year):
     interval = 3
+    measurement_unit = 'quarter'
     month_start = interval * (ordinal - 1)
     if month_start < 0:
         month_start = 9
     month_end = month_start + interval
     if month_start == 0:
         month_start = 1
-    return [
+    return ([
         datetime(year, month_start, 1),
         datetime(year, month_end, calendar.monthrange(year, month_end)[1])
-    ]
+    ], measurement_unit)
 
 # Converts relative day to time
 # this tuesday, last tuesday
@@ -758,6 +780,28 @@ def dateFromRelativeDay(base_date, time, dow):
         # Else day of week
         num = hashweekdays[dow]
         return next_week_day(base_date, num)
+  
+# Converts relative month to time
+# this december, last january
+def dateFromRelativeMonth(base_date, time, month):
+    # Reset date to start of the day
+    base_date = datetime(base_date.year, base_date.month, base_date.day)
+    # Convert to lower
+    if time:
+        time = time.lower()
+    month = month.lower()
+    if time == 'this' or time == 'coming' or time == 'current':
+        # Else day of week
+        num = hashmonths[month]
+        return datetime(base_date.year, num, 1)
+    elif time == 'last' or time == 'previous':
+        # Else day of week
+        num = hashmonths[month]
+        return datetime(base_date.year, num, 1) + relativedelta(years=-1)
+    elif time == 'next' or time == 'following':
+        # Else day of week
+        num = hashmonths[month]
+        return datetime(base_date.year, num, 1) + relativedelta(years=1)
 
 # Converts relative day to time
 # this tuesday, last tuesday
@@ -766,6 +810,7 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
     # Reset date to start of the day
     # ordinal = int(ordinal) if ordinal is not None and ordinal.isdigit() else 1
     # Convert to lower
+    measurement_unit = 'day'
     if time:
         time = time.lower()
     if ordinal is not None:
@@ -779,27 +824,29 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
             ordinal = 1
     d = datetime(base_date.year, base_date.month, base_date.day)
     if dow in year_variations:
+        measurement_unit = 'year'
         if time == 'this' or time == 'coming' or time == 'current':
-            return datetime(d.year, 1, 1)
+            return (datetime(d.year, 1, 1), measurement_unit)
         elif time == 'last' or time == 'previous':
             if ordinal > 1:
                 values = []
                 while ordinal > 0:
                     values.append(datetime(d.year, d.month, 1) + relativedelta(years=-ordinal))
                     ordinal = ordinal - 1
-                return values
-            return datetime(d.year - ordinal, d.month, 1)
+                return (values, measurement_unit)
+            return (datetime(d.year - ordinal, d.month, 1), measurement_unit)
         elif time == 'next' or time == 'following':
             if ordinal > 1:
                 values = []
                 while ordinal > 0:
                     values.append(datetime(d.year, d.month, 1) + relativedelta(years=+ordinal))
                     ordinal = ordinal - 1
-                return values
-            return datetime(d.year + 1, d.month, 1)
+                return (values, measurement_unit)
+            return (datetime(d.year + 1, d.month, 1), measurement_unit)
         elif time == 'end of the':
-            return datetime(d.year, 12, 31)
+            return (datetime(d.year, 12, 31), measurement_unit)
     elif dow in month_variations:
+        measurement_unit = 'month'
         if time == 'this' or time == 'current':
             return datetime(d.year, d.month, d.day)
         elif time == 'last' or time == 'previous':
@@ -808,60 +855,62 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
                 while ordinal > 0:
                     values.append(datetime(d.year, d.month, d.day) + relativedelta(months=-ordinal))
                     ordinal = ordinal - 1
-                return values
-            return datetime(d.year, d.month, d.day) + relativedelta(months=-1)
+                return (values, measurement_unit)
+            return (datetime(d.year, d.month, d.day) + relativedelta(months=-1), measurement_unit)
         elif time == 'next' or time == 'following':
-            return datetime(d.year, d.month, d.day) + relativedelta(months=1)
+            return (datetime(d.year, d.month, d.day) + relativedelta(months=1), measurement_unit)
         elif time == 'end of the':
-            return datetime(d.year, d.month, calendar.monthrange(d.year, d.month)[1])
+            return (datetime(d.year, d.month, calendar.monthrange(d.year, d.month)[1]), measurement_unit)
     elif dow in week_variations:
+        measurement_unit = 'week'
         if time == 'this' or time == 'current':
-            return d - timedelta(days=d.weekday())
+            return (d - timedelta(days=d.weekday()), measurement_unit)
         elif time == 'last' or time == 'previous':
             if ordinal > 1:
                 values = []
                 while ordinal > 0:
                     values.append(d - timedelta(weeks=ordinal))
                     ordinal = ordinal - 1
-                return values
-            return d - timedelta(weeks=1)
+                return (values, measurement_unit)
+            return (d - timedelta(weeks=1), measurement_unit)
         elif time == 'next' or time == 'following':
             if ordinal > 1:
                 values = []
                 while ordinal > 0:
                     values.append(d + timedelta(weeks=ordinal))
                     ordinal = ordinal - 1
-                return values
-            return d + timedelta(weeks=1)
+                return (values, measurement_unit)
+            return (d + timedelta(weeks=1), measurement_unit)
         elif time == 'end of the':
             day_of_week = base_date.weekday()
-            return d + timedelta(days=6 - d.weekday())
+            return (d + timedelta(days=6 - d.weekday()), measurement_unit)
     elif dow in day_variations:
         if time == 'this' or time == 'current':
-            return d
+            return (d, measurement_unit)
         elif time == 'last' or time == 'previous':
             if ordinal > 1:
                 values = []
                 while ordinal > 0:
                     values.append(d - timedelta(days=ordinal))
                     ordinal = ordinal - 1
-                return values
-            return d - timedelta(days=1)
+                return (values, measurement_unit)
+            return (d - timedelta(days=1), measurement_unit)
         elif time == 'next' or time == 'following':
             if ordinal > 1:
                 values = []
                 while ordinal > 0:
                     values.append(d + timedelta(days=ordinal))
                     ordinal = ordinal - 1
-                return values
+                return (values, measurement_unit)
             return d + timedelta(days=1)
         elif time == 'end of the':
-            return datetime(d.year, d.month, d.day, 23, 59, 59)
+            return (datetime(d.year, d.month, d.day, 23, 59, 59), measurement_unit)
 
 # Convert Day adverbs to dates
 # Tomorrow => Date
 # Today => Date
 def dateFromAdverb(base_date, name):
+    measurement_unit = 'day'
     # Reset date to start of the day
     d = datetime(base_date.year, base_date.month, base_date.day)
     if name:
@@ -883,7 +932,19 @@ def dateYearRange(base_date, year_start, year_end):
         year_end = tmp
     for i in range(year_start, year_end + 1):
         values.append(datetime(i, 1, 1))
-    return values
+    return (values, 'year')
+
+def normalizeUnit (unit):
+  if unit in year_variations:
+      return 'year'
+  if unit in day_variations:
+      return 'day'
+  if unit in month_variations:
+      return 'month'
+  if unit in hour_variations:
+      return 'hour'
+  if unit in minute_variations:
+      return 'minute'
 
 def dateFromDurationDigit(base_date, duration, year, day):
     values = []
@@ -913,7 +974,6 @@ def dateFromDurationDigit(base_date, duration, year, day):
 # Eg: 20 days from now
 # Doesnt support 20 days from last monday
 def dateFromDuration(base_date, numberAsString, unit, duration, base_time = None):
-    print ('called dateFromDuration')
     # Check if query is `2 days before yesterday` or `day before yesterday`
     if base_time != None:
         base_date = dateFromAdverb(base_date, base_time)
@@ -1050,19 +1110,25 @@ def datetime_parsing (text, base_date = datetime.now()):
     for r, fn in regex:
         for m in r.finditer(text):
             try:
-                matches.append((m.group(), fn(m, base_date), m.span()))
+                val = fn(m, base_date)
+                unit = 'day'
+                if (isinstance(val, tuple)):
+                  value, unit = val
+                else:
+                  value = val
+                matches.append((m.group(), value, m.span(), unit))
             except ValueError:
                 continue
 
     # print (matches)
 
     # Wrap the matched text with TAG element to prevent nested selections
-    for match, value, spans in matches:
+    for match, value, spans, unit in matches:
         subn = re.subn('(?!<TAG[^>]*?>)' + match + '(?![^<]*?</TAG>)', '<TAG>' + match + '</TAG>', text)
         text = subn[0]
         isSubstituted = subn[1]
         if isSubstituted != 0:
-            found_array.append((match, value, spans))
+            found_array.append((match, value, spans, unit))
 
     # To preserve order of the match, sort based on the start position
     return sorted(found_array, key = lambda match: match and match[2][0])
