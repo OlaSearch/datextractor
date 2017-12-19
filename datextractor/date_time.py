@@ -937,10 +937,12 @@ def dateYearRange(base_date, year_start, year_end):
 def normalizeUnit (unit):
   if unit in year_variations:
       return 'year'
-  if unit in day_variations:
-      return 'day'
   if unit in month_variations:
       return 'month'
+  if unit in week_variations:
+      return 'week'
+  if unit in day_variations:
+      return 'day'
   if unit in hour_variations:
       return 'hour'
   if unit in minute_variations:
