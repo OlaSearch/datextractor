@@ -231,19 +231,21 @@ def number_parsing (text):
     # Lowercase text for easy Matching
     text = text.lower()
 
+    unit = 'number'
+
     # Find the position in the string
     for r, fn in regex:
         for m in r.finditer(text):
-            matches.append((m.group(), fn(m), m.span()))
+            matches.append((m.group(), fn(m), m.span(), unit))
 
 
     # Wrap the matched text with TAG element to prevent nested selections
-    for match, value, spans in matches:
+    for match, value, spans, unit in matches:
         subn = re.subn('(?!<NUMBER_TAG[^>]*?>)' + match + '(?![^<]*?</NUMBER_TAG>)', '<NUMBER_TAG>' + match + '</NUMBER_TAG>', text)
         text = subn[0]
         isSubstituted = subn[1]
         if isSubstituted != 0:
-            found_array.append((match, value, spans))
+            found_array.append((match, value, spans, unit))
 
     # To preserve order of the match, sort based on the start position
     return sorted(found_array, key = lambda match: match and match[2][0])
