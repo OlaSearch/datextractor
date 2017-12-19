@@ -89,7 +89,7 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            )), 'day')
+            )), getDateUnit(m.group('day'), m.group('month'), m.group('year')))
     ),
     (re.compile(
         r'''
@@ -117,7 +117,7 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            )), 'day')
+            )), getDateUnit(m.group('day'), m.group('month'), m.group('year')))
     ),
     (re.compile(
         r'''
@@ -143,7 +143,7 @@ regex = [
                 m.group('hour'),
                 m.group('minute'),
                 m.group('convention')
-            )), 'day')
+            )), getDateUnit(m.group('day'), m.group('month'), m.group('year')))
     ),
     (re.compile(
         r'''
@@ -393,11 +393,11 @@ regex = [
         '''% (re_ordinal, month_names),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
                 base_date.year,
                 hashmonths[m.group('month').strip().lower()],
                 int(m.group('day') if m.group('day') else 1)
-            )
+            ), 'day')
     ),
     (re.compile(
         r'''
@@ -412,11 +412,11 @@ regex = [
         '''% (month_names, re_ordinal),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
                 base_date.year,
                 hashmonths[m.group('month').strip().lower()],
                 int(m.group('day') if m.group('day') else 1)
-            )
+            ), 'day')
     ),
     (re.compile(
         r'''
@@ -430,11 +430,11 @@ regex = [
         '''% (month_names),
         (re.VERBOSE | re.IGNORECASE)
         ),
-        lambda m, base_date: datetime(
+        lambda m, base_date: (datetime(
                 int(m.group('year')),
                 hashmonths[m.group('month').strip().lower()],
                 1
-            )
+            ), 'month')
     ),
     (re.compile(
         r'''
@@ -933,6 +933,14 @@ def dateYearRange(base_date, year_start, year_end):
     for i in range(year_start, year_end + 1):
         values.append(datetime(i, 1, 1))
     return (values, 'year')
+
+def getDateUnit (day, year, month):
+  if day is not None:
+    return 'day'
+  if month is not None:
+    return 'month'
+  if year is not None:
+    return 'year'
 
 def normalizeUnit (unit):
   if unit in year_variations:
