@@ -1109,7 +1109,9 @@ hashordinals = {
 }
 
 # Parses date
-def datetime_parsing (text, base_date = datetime.now()):
+def datetime_parsing (text, base_date = datetime.now):
+    # Evaluate base date
+    base_date = base_date()
     matches = []
     found_array = []
 
