@@ -128,7 +128,7 @@ class DateTimeParsingTestCases(TestCase):
     input_text = 'My birthday is on January 1st.'
     parser = datetime_parsing(input_text)
     self.assertIn('January 1st'.lower(), parser[0])
-    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '01-01-2017')
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '01-01-2018')
     self.assertEqual(len(parser), 1)
 
     input_text = 'My birthday is on January 1st 2014.'
@@ -152,7 +152,7 @@ class DateTimeParsingTestCases(TestCase):
     input_text = '10 Feb'
     parser = datetime_parsing(input_text)
     self.assertIn(input_text.lower(), parser[0])
-    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '10-02-2017')
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y'), '10-02-2018')
     self.assertEqual(len(parser), 1)
 
     input_text = 'fourteenth april twenty seventeen'
@@ -241,3 +241,9 @@ class DateTimeParsingTestCases(TestCase):
     parser = datetime_parsing(input_text)
     print (parser)
     self.assertEqual(parser[0][3], 'month')
+
+    input_text = 'monday 12 jan 2012 at 12:23pm'
+    parser = datetime_parsing(input_text)
+    print (parser)
+    self.assertEqual(parser[0][3], 'day')
+    self.assertEqual(parser[0][1].strftime('%d-%m-%Y %H:%M'), '13-01-2012 00:23')

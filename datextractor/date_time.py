@@ -27,7 +27,7 @@ re_year = "(17|18|19|20)\d{2}|^(17|18|19|20)\d{2}"
 re_timeframe = 'current|this|coming|next|following|previous|last|end\sof\sthe|since'
 re_ordinal = 'st|nd|rd|th|first|second|third|fourth|fourth|' + re_timeframe
 re_number_end = ['st', 'nd', 'rd', 'th']
-re_time = '(?P<hour>\d{1,2})(\s?)(\:(?P<minute>\d{1,2})|(?P<convention>am|pm))'
+re_time = '(?P<hour>\d{1,2})(\s?)(\:(?P<minute>\d{1,2})(?P<convention>am|pm))'
 re_separator = 'of|at|on'
 all_numbers = numbers + '|first|second|third|forth|fourth|fifth|sixth|seventh|eighth|ninth|tenth'
 
