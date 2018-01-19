@@ -1144,3 +1144,53 @@ def datetime_parsing (text, base_date = datetime.now):
 
     # To preserve order of the match, sort based on the start position
     return sorted(found_array, key = lambda match: match and match[2][0])
+
+# Check if date is strict or not
+strict_text = set([
+  'start',
+  'starts',
+  'started',
+  'starting',
+  'end',
+  'ends',
+  'ended',
+  'ending',
+  'complete',
+  'completes',
+  'completed',
+  'completing',
+  'finish',
+  'finishes',
+  'finished',
+  'finishing',
+  'stop',
+  'stops',
+  'stopped',
+  'stopping',
+  'close',
+  'closes',
+  'closing',
+  'concludes',
+  'concluded',
+  'concluding',
+  'begin',
+  'begins',
+  'began',
+  'beginning',
+  'commence',
+  'commenced',
+  'commencing',
+  'create',
+  'created',
+  'creating'
+])
+def strict_parsing (text, dates):
+  o = []
+  for match, value , span, unit in dates:
+    start, end = span
+    last_two_words = text[:start].split()[-2:]
+    is_strict = False
+    if bool(strict_text & set(last_two_words)):
+      is_strict = True
+    o.append((match, value, span, unit, is_strict))
+  return o
