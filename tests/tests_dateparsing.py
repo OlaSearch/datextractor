@@ -239,11 +239,14 @@ class DateTimeParsingTestCases(TestCase):
 
     input_text = 'last december'
     parser = datetime_parsing(input_text)
-    print (parser)
+
     self.assertEqual(parser[0][3], 'month')
 
     input_text = 'monday 12 jan 2012 at 12:23pm'
     parser = datetime_parsing(input_text)
-    print (parser)
     self.assertEqual(parser[0][3], 'day')
     self.assertEqual(parser[0][1].strftime('%d-%m-%Y %H:%M'), '13-01-2012 00:23')
+
+    input_text = 'may be now'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(len(parser), 0)
