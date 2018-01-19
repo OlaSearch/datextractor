@@ -13,16 +13,13 @@ class DateTimeParsingTestCases(TestCase):
     base_date = datetime.now()
 
     input_text = 'The event is on Monday 12 January 2012'
-    parser = datetime_parsing(input_text)
-    strict_parse = strict_parsing(input_text, parser)
-    self.assertEqual(strict_parse[0][4], False)
+    parser = strict_parsing(input_text)
+    self.assertEqual(parser[0][4], False)
 
     input_text = 'The event starts on Monday 12 January 2012'
-    parser = datetime_parsing(input_text)
-    strict_parse = strict_parsing(input_text, parser)
-    self.assertEqual(strict_parse[0][4], True)
+    parser = strict_parsing(input_text)
+    self.assertEqual(parser[0][4], True)
 
     input_text = 'The event starts on Monday 12 January 2012 and is ending tomorrow'
-    parser = datetime_parsing(input_text)
-    strict_parse = strict_parsing(input_text, parser)
-    self.assertEqual(strict_parse[1][4], True)
+    parser = strict_parsing(input_text)
+    self.assertEqual(parser[1][4], True)

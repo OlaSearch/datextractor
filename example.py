@@ -37,4 +37,4 @@ text = 'The event starts on Monday 12 January 2012 and is ending may be tomorrow
 # print tag_email('Hello my email address is rmdort@gmail.com and hello@hotmail.c')
 # print tag_url('Hello my website url is http://www.olasearch.com')
 
-print (strict_parsing(text, datetime_parsing(text)))
+print (strict_parsing(text))
