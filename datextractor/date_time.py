@@ -1185,7 +1185,7 @@ strict_text = set([
   'creating'
 ])
 
-def strict_parsing (text):
+def strict_datetime_parsing (text):
   dates = datetime_parsing(text)
   o = []
   for match, value , span, unit in dates:

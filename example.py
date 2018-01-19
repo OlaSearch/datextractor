@@ -1,4 +1,4 @@
-from datextractor import datetime_parsing, strict_parsing
+from datextractor import datetime_parsing, strict_datetime_parsing
 
 # text = '<p>First quarter of 2016 and tomorrow and next 2 years</p>'
 # text = '<p>10th of Feb 2017</p>'
@@ -37,4 +37,4 @@ text = 'The event starts on Monday 12 January 2012 and is ending may be tomorrow
 # print tag_email('Hello my email address is rmdort@gmail.com and hello@hotmail.c')
 # print tag_url('Hello my website url is http://www.olasearch.com')
 
-print (strict_parsing(text))
+print (strict_datetime_parsing(text))

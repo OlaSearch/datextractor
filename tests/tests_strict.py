@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
 from datetime import timedelta, date, datetime
-from datextractor import datetime_parsing, strict_parsing
+from datextractor import datetime_parsing, strict_datetime_parsing
 
 """
   Output of the parser is an array of tuples
@@ -13,13 +13,13 @@ class DateTimeParsingTestCases(TestCase):
     base_date = datetime.now()
 
     input_text = 'The event is on Monday 12 January 2012'
-    parser = strict_parsing(input_text)
+    parser = strict_datetime_parsing(input_text)
     self.assertEqual(parser[0][4], False)
 
     input_text = 'The event starts on Monday 12 January 2012'
-    parser = strict_parsing(input_text)
+    parser = strict_datetime_parsing(input_text)
     self.assertEqual(parser[0][4], True)
 
     input_text = 'The event starts on Monday 12 January 2012 and is ending tomorrow'
-    parser = strict_parsing(input_text)
+    parser = strict_datetime_parsing(input_text)
     self.assertEqual(parser[1][4], True)
