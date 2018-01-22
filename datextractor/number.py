@@ -232,6 +232,7 @@ def number_parsing (text):
     text = text.lower()
 
     unit = 'number'
+    strict = False
 
     # Find the position in the string
     for r, fn in regex:
@@ -245,7 +246,7 @@ def number_parsing (text):
         text = subn[0]
         isSubstituted = subn[1]
         if isSubstituted != 0:
-            found_array.append((match, value, spans, unit))
+            found_array.append((match, value, spans, unit, strict))
 
     # To preserve order of the match, sort based on the start position
     return sorted(found_array, key = lambda match: match and match[2][0])
