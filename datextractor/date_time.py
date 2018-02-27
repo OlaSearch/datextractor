@@ -573,7 +573,7 @@ regex = [
         (\b)
         (?P<month>%s) # Month
         (\b)
-        '''% (month_names_long),
+        '''% (month_names),
         (re.VERBOSE | re.IGNORECASE)
         ),
         lambda m, base_date: (datetime(
