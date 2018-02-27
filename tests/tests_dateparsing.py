@@ -250,3 +250,15 @@ class DateTimeParsingTestCases(TestCase):
     input_text = 'may be now'
     parser = datetime_parsing(input_text)
     self.assertEqual(len(parser), 0)
+
+    input_text = 'in may'
+    parser = datetime_parsing(input_text)
+    self.assertEqual(len(parser), 1)
+
+    input_text = 'hello aug' # May always gets captured
+    parser = datetime_parsing(input_text)
+    self.assertEqual(len(parser), 0)
+
+    input_text = 'hello may' # May always gets captured
+    parser = datetime_parsing(input_text)
+    self.assertEqual(len(parser), 1)

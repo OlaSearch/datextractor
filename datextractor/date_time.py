@@ -15,7 +15,8 @@ month_variations = ['month', 'months']
 # Variables used for RegEx Matching
 day_names = 'monday|tuesday|wednesday|thursday|friday|saturday|sunday'
 month_names_long = 'january|february|march|april|may(?!\sbe\s)|june|july|august|september|october|november|december'
-month_names = month_names_long + '|jan|feb|mar|apr|may(?!\sbe\s)|jun|jul|aug|sep|oct|nov|dec'
+month_names_short = 'jan|feb|mar|apr|may(?!\sbe\s)|jun|jul|aug|sep|oct|nov|dec'
+month_names = month_names_long + '|' + month_names_short
 day_nearest_names = 'today|yesterday|tomorrow|tonight|tonite'
 numbers = "(^a(?=\s)|one|two|three|four|five|six|seven|eight|nine|ten| \
                     eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen| \
@@ -573,8 +574,22 @@ regex = [
         (\b)
         (?P<month>%s) # Month
         (\b)
-        '''% (month_names),
+        '''% (month_names_long),
         (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m, base_date: (datetime(
+            base_date.year,
+            hashmonths[m.group('month').lower()],
+            1
+        ), 'month')
+    ),
+    # Capture short month names (jan|feb etc)
+    (re.compile(
+        r'''
+        (^|((in|of)\s))
+        (?P<month>%s)
+        '''% (month_names_short),
+        (re.IGNORECASE)
         ),
         lambda m, base_date: (datetime(
             base_date.year,
