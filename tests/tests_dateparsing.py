@@ -262,3 +262,21 @@ class DateTimeParsingTestCases(TestCase):
     input_text = 'hello may' # May always gets captured
     parser = datetime_parsing(input_text)
     self.assertEqual(len(parser), 1)
+
+    input_text = 'this weekend' # May always gets captured
+    parser = datetime_parsing(input_text, base_date=datetime.strptime('24052010', "%d%m%Y").date)
+    self.assertEqual(parser[0][3], 'day')
+    self.assertEqual(parser[0][1][0].strftime('%d-%m-%Y'), '29-05-2010')
+    self.assertEqual(parser[0][1][1].strftime('%d-%m-%Y'), '30-05-2010')
+
+    input_text = 'last weekend' # May always gets captured
+    parser = datetime_parsing(input_text, base_date=datetime.strptime('24052010', "%d%m%Y").date)
+    self.assertEqual(parser[0][3], 'day')
+    self.assertEqual(parser[0][1][0].strftime('%d-%m-%Y'), '22-05-2010')
+    self.assertEqual(parser[0][1][1].strftime('%d-%m-%Y'), '23-05-2010')
+
+    input_text = 'next weekend' # May always gets captured
+    parser = datetime_parsing(input_text, base_date=datetime.strptime('24052010', "%d%m%Y").date)
+    self.assertEqual(parser[0][3], 'day')
+    self.assertEqual(parser[0][1][0].strftime('%d-%m-%Y'), '05-06-2010')
+    self.assertEqual(parser[0][1][1].strftime('%d-%m-%Y'), '06-06-2010')

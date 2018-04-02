@@ -11,6 +11,7 @@ minute_variations = ['minute', 'minutes', 'mins']
 hour_variations = ['hrs', 'hours', 'hour']
 week_variations = ['weeks', 'week', 'wks']
 month_variations = ['month', 'months']
+weekend_variations = ['weekend', 'weekends']
 
 # Variables used for RegEx Matching
 day_names = 'monday|tuesday|wednesday|thursday|friday|saturday|sunday'
@@ -22,7 +23,7 @@ numbers = "(^a(?=\s)|one|two|three|four|five|six|seven|eight|nine|ten| \
                     eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen| \
                     eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty| \
                     ninety|hundred|thousand|first|second|third|forth|fourth|fifth)"
-re_dmy = '(' + "|".join(day_variations + minute_variations + year_variations + week_variations + month_variations) + ')'
+re_dmy = '(' + "|".join(day_variations + minute_variations + year_variations + week_variations + month_variations + weekend_variations) + ')'
 re_duration = '(before|after|earlier|later|ago|from\snow)'
 re_year = "(17|18|19|20)\d{2}|^(17|18|19|20)\d{2}"
 re_timeframe = 'current|this|coming|next|following|previous|last|end\sof\sthe|since'
@@ -920,6 +921,21 @@ def dateFromRelativeWeekYear(base_date, time, dow, ordinal = None):
             return (d + timedelta(days=1), measurement_unit)
         elif time == 'end of the':
             return (datetime(d.year, d.month, d.day, 23, 59, 59), measurement_unit)
+    elif dow in weekend_variations:
+        monday = d - timedelta(days=d.weekday())
+        saturday = monday + timedelta(days=5)
+        sunday = monday + timedelta(days=6)
+        if time == 'this' or time == 'current':
+            # sunday = d - timedelta()
+            return ([saturday, sunday], measurement_unit)
+        elif time == 'last' or time == 'previous':
+            saturday = saturday - timedelta(weeks=1)
+            sunday = sunday - timedelta(weeks=1)
+            return ([saturday, sunday], measurement_unit)
+        elif time == 'next' or time == 'following':
+            saturday = saturday + timedelta(weeks=1)
+            sunday = sunday + timedelta(weeks=1)
+            return ([saturday, sunday], measurement_unit)
 
 # Convert Day adverbs to dates
 # Tomorrow => Date

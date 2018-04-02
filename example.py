@@ -1,4 +1,5 @@
 from datextractor import datetime_parsing, strict_datetime_parsing, number_parsing
+from datetime import timedelta, date, datetime
 
 # text = '<p>First quarter of 2016 and tomorrow and next 2 years</p>'
 # text = '<p>10th of Feb 2017</p>'
@@ -24,6 +25,8 @@ text = 'yesterday'
 text = 'aug'
 text = 'hello aug'
 text = 'hello may'
+text = 'this weekend'
+# text = 'next weekend'
 # text = 'The event starts on Monday 12 January 2012 and is ending may be tomorrow'
 # text = 'Monday 12 Jan 2012 12:23pm'
 # text = '<p>twenty first april twenty seventeen</p>'
@@ -40,5 +43,6 @@ text = 'hello may'
 # print tag_email('Hello my email address is rmdort@gmail.com and hello@hotmail.c')
 # print tag_url('Hello my website url is http://www.olasearch.com')
 
-print (strict_datetime_parsing(text))
-print (number_parsing('2'))
+print (datetime_parsing(text, base_date=datetime.strptime('24052010', "%d%m%Y").date))
+# print (strict_datetime_parsing(text))
+# print (number_parsing('2'))
