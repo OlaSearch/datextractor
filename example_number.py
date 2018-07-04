@@ -7,7 +7,7 @@ text = 'I have 2 fdws can i hire a 3rd fdw?'
 text = 'I earn 2000 dollars, can i hire a maid'
 text = 'I earn 10 - 20 dollars, can i hire a maid'
 text = 'I earn 10 to 20 dollars, can i hire a maid'
-text = 'Security guard +29 123213 (12312)-(123)'
+text = 'transfer around 2 million to john_snow after 2 weeks'
 
 print (str(number_parsing(text)))
 

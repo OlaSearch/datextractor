@@ -264,13 +264,24 @@ def number_parsing (text):
         for m in r.finditer(text):
             matches.append((m.group(), fn(m), m.span(), unit))
 
+    replaced_start_indexes = []
 
     # Wrap the matched text with TAG element to prevent nested selections
+    # Bug: transfer around 2 million to john snow after 2 weeks
+    # 2 million is a number
+    # ('m.span()', (16, 25), 'number', '2 million')
+    # ('m.span()', (18, 25), 'number', 'million')
+    # ('m.span()', (16, 17), 'number', '2') => matched, but the spans are wrong
+    # ('m.span()', (45, 46), 'number', '2')
     for match, value, spans, unit in matches:
-        subn = re.subn('(?!<NUMBER_TAG[^>]*?>)' + match + '(?![^<]*?</NUMBER_TAG>)', '<NUMBER_TAG>' + match + '</NUMBER_TAG>', text)
+        # has it already been replaced ?
+        if spans[0] in replaced_start_indexes:
+          continue
+        subn = re.subn('(?!<NUMBER_TAG[^>]*?>)' + match + '(?![^<]*?</NUMBER_TAG>)', '<NUMBER_TAG>' + match + '</NUMBER_TAG>', text, count = 1)
         text = subn[0]
         isSubstituted = subn[1]
-        if isSubstituted != 0 and value is not None:
+        if isSubstituted != 0:
+            replaced_start_indexes.append(spans[0])
             found_array.append((match, value, spans, unit, strict))
 
     # To preserve order of the match, sort based on the start position
