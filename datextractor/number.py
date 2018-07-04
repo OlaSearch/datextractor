@@ -77,6 +77,23 @@ regex = [
         ),
         lambda m: convert_units_scales(m.group('units'), m.group('scales'), m.group('mods'))
     ),
+    # Captures all digits
+    # 45
+    (re.compile(
+        r'''
+        (\b)
+        (
+          (?P<mods>(%s)\s)?
+          (?P<digit>\d*\.?\d+?)
+          (\s)
+          (?P<scales>%s)
+        )
+        (\b)
+        '''%(re_mods, re_scales),
+        (re.VERBOSE | re.IGNORECASE)
+        ),
+        lambda m: convert_digit_scales(m.group('digit'), m.group('scales'), m.group('mods'))
+    ),
     # Captures
     # Ninety nine, fourty eight
     (re.compile(
@@ -198,6 +215,14 @@ def convert_units_scales (units = None, scales = None, mods = None):
     value += get_mods_value(mods)
   return value
 
+def convert_digit_scales (digit = None, scales = None, mods = None):
+  value =  float(digit) * (
+    hash_scales[scales] if scales is not None else 0
+  )
+  if mods is not None:
+    value += get_mods_value(mods)
+  return value
+
 def convert_to_pure_number (num, mods = None):
   value = normalize_int_float(float(num))
 
@@ -245,7 +270,7 @@ def number_parsing (text):
         subn = re.subn('(?!<NUMBER_TAG[^>]*?>)' + match + '(?![^<]*?</NUMBER_TAG>)', '<NUMBER_TAG>' + match + '</NUMBER_TAG>', text)
         text = subn[0]
         isSubstituted = subn[1]
-        if isSubstituted != 0:
+        if isSubstituted != 0 and value is not None:
             found_array.append((match, value, spans, unit, strict))
 
     # To preserve order of the match, sort based on the start position
